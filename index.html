@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102925">
+  <meta name="description" content="免费、免登录的核苷酸序列比对工具。支持 FASTA、GenBank/ApE 文本与 CLUSTAL 输入，显示 DNAMAN 风格的分段比对结果。">
+  <title>核苷酸序列比对 · SeqLab</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell nav-row">
+      <a class="brand" href="#top" aria-label="SeqLab 首页">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span>SeqLab <small>核苷酸比对</small></span>
+      </a>
+      <div class="header-actions">
+        <span class="privacy-indicator"><span class="pulse"></span> 浏览器本地计算</span>
+        <a href="#help" class="help-link">使用说明 <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="intro shell">
+      <div class="eyebrow"><span class="eyebrow-line"></span> SEQUENCE ALIGNMENT STUDIO <span class="eyebrow-line"></span></div>
+      <h1>把序列放进来，<em>差异一眼看清。</em></h1>
+      <p>面向日常基因片段分析的轻量比对工具。粘贴或上传序列，一键查看位点差异，并带走可复用的比对文件。</p>
+      <div class="intro-pills" aria-label="主要特性">
+        <span>FASTA / GenBank / CLUSTAL</span>
+        <span>2–8 条 DNA 序列</span>
+        <span>免登录 · 免费使用</span>
+      </div>
+    </section>
+
+    <section class="workspace shell" aria-label="序列比对工作区">
+      <div class="input-panel panel">
+        <div class="panel-heading">
+          <div><span class="section-number">01 / INPUT</span><h2>输入序列</h2></div>
+          <button class="text-button" id="example-button" type="button">载入示例 <span aria-hidden="true">↗</span></button>
+        </div>
+        <p class="field-hint">第一条自动设为参照；每条 FASTA 用 <code>&gt;序列名称</code> 开头。</p>
+        <label class="sr-only" for="sequence-input">粘贴 FASTA、GenBank、CLUSTAL 或纯 DNA 序列</label>
+        <textarea id="sequence-input" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder=">参照序列&#10;ATGCCGTAACCTGACGTTACG...&#10;>待比对序列&#10;ATGCCGTAACCTAACGTTACG..."></textarea>
+        <div id="drop-zone" class="drop-zone">
+          <div class="drop-icon" aria-hidden="true">↥</div>
+          <div><strong>拖入序列文件</strong><span>或点击选择；可一次上传多个文件</span></div>
+          <button id="upload-button" class="upload-button" type="button">选择文件</button>
+          <input id="file-input" type="file" multiple accept=".fa,.fas,.fasta,.fna,.txt,.ape,.gb,.gbk,.genbank,.aln,.seq,text/plain" hidden>
+        </div>
+        <div class="format-note">支持 FASTA、GenBank / ApE 文本（.ape、.gb）、CLUSTAL 和纯序列。文件会转成可编辑的 FASTA 文本。</div>
+        <div class="settings">
+          <label class="checkbox-line"><input type="checkbox" id="auto-orient" checked><span class="custom-check" aria-hidden="true"></span><span><strong>自动识别反向互补</strong><small>逐条选择与参照得分更高的方向</small></span></label>
+        </div>
+        <div class="input-footer">
+          <button id="align-button" class="primary-button" type="button"><span>开始比对</span><span aria-hidden="true">→</span></button>
+          <button id="clear-button" class="clear-button" type="button">清空</button>
+        </div>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+        <p class="limits">适合常见基因片段：单条 ≤ 3,000 nt，最多 8 条。比对采用全局算法（匹配 +2 / 模糊兼容 0 / 不匹配 −1 / 缺口 −2）。</p>
+      </div>
+
+      <div id="result-panel" class="result-panel panel">
+        <div class="panel-heading result-heading">
+          <div><span class="section-number">02 / RESULTS</span><h2>比对结果</h2></div>
+          <span id="result-state" class="result-state">等待序列</span>
+        </div>
+        <div id="empty-state" class="empty-state">
+          <div class="empty-art" aria-hidden="true">
+            <div class="empty-sequence"><span>A</span><span>T</span><span>G</span><span>C</span><span>C</span><span>A</span><span>T</span><span>G</span></div>
+            <div class="empty-markers"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="empty-sequence bottom"><span>A</span><span>T</span><span>G</span><span>T</span><span>C</span><span>A</span><span>T</span><span>G</span></div>
+          </div>
+          <h3>从两条序列开始</h3>
+          <p>粘贴 FASTA 或上传文件，点击“开始比对”，这里会显示 DNAMAN 风格的逐位比对与差异概览。</p>
+          <button id="empty-example-button" type="button" class="inline-cta">先试试示例序列 <span aria-hidden="true">→</span></button>
+        </div>
+        <div id="results" hidden>
+          <div id="summary-cards" class="summary-cards"></div>
+          <div class="result-toolbar">
+            <div class="view-switch" role="group" aria-label="序列颜色模式">
+              <button class="view-button active" data-view="difference" type="button" aria-pressed="true">突出差异</button>
+              <button class="view-button" data-view="base" type="button" aria-pressed="false">按碱基着色</button>
+            </div>
+            <div class="download-group">
+              <button id="copy-button" type="button" class="small-action">复制文本</button>
+              <label for="export-format" class="sr-only">下载格式</label>
+              <select id="export-format" aria-label="下载格式">
+                <option value="fasta">对齐 FASTA</option>
+                <option value="clustal">CLUSTAL</option>
+                <option value="text">纯文本报告</option>
+              </select>
+              <button id="download-button" type="button" class="small-action filled">下载 ↓</button>
+            </div>
+          </div>
+          <div id="sequence-key" class="sequence-key"></div>
+          <div class="alignment-head"><span>ALIGNMENT VIEW</span><span id="column-count"></span></div>
+          <div class="alignment-scroll" tabindex="0" aria-label="比对序列，可横向滚动">
+            <div id="alignment-view" class="alignment-view"></div>
+          </div>
+          <div class="legend" aria-label="颜色说明">
+            <span><i class="legend-dot match-dot"></i>相同</span>
+            <span><i class="legend-dot substitution-dot"></i>替换 / 模糊</span>
+            <span><i class="legend-dot gap-dot"></i>插入 / 缺失</span>
+            <span>坐标按当前显示方向计算</span>
+          </div>
+          <div class="difference-head">
+            <div><span class="section-number">VARIANTS</span><h3>差异概览</h3></div>
+            <span id="variant-count"></span>
+          </div>
+          <div id="variant-list" class="variant-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="help" class="help-section shell">
+      <div class="help-title"><span class="section-number">GOOD TO KNOW</span><h2>使用说明</h2></div>
+      <div class="help-grid">
+        <article><span class="help-index">01</span><h3>文件与粘贴</h3><p>支持常见 FASTA、GenBank（包括 ApE 保存的文本式 .ape/.gb）和 CLUSTAL 文件。ApE 的二进制或特殊扩展内容可能需要先导出 FASTA。</p></article>
+        <article><span class="help-index">02</span><h3>如何读结果</h3><p>以第一条为参照，分段显示序列、位置与严格共识。差异包含替换和插入/缺失；一致率仅按双方都有碱基的 A/C/G/T 完全相同位点计算。</p></article>
+        <article><span class="help-index">03</span><h3>导出与隐私</h3><p>可导出通用对齐 FASTA、CLUSTAL 或纯文本，方便继续在 ApE、DNAMAN 等工具中使用。计算发生在本机浏览器，网页不会上传序列。</p></article>
+      </div>
+      <p class="method-note">本工具提供轻量全局比对，多个序列以第一条为中心逐步合并。复杂长片段、结构变异和发表级分析请再用专业软件复核；本网站不生成 DNAMAN 专有工程文件。</p>
+    </section>
+  </main>
+  <footer class="footer"><div class="shell"><span class="footer-brand">SeqLab <span>核苷酸比对</span></span><span>为快速查看序列差异而设计 · 免费公开使用</span></div></footer>
+  <script type="module" src="./app.mjs"></script>
+</body>
+</html>
