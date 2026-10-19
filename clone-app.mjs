@@ -1,5 +1,5 @@
-import {parseSequences} from './align-core.mjs?v=20261019-clone2';
-import {VERSIONS,shardFor,cloningTemplate,compareDNA,designPrimers,bindingCheck,fastaText} from './clone-core.mjs?v=20261019-clone2';
+import {parseSequences} from './align-core.mjs?v=20261019-clone3';
+import {VERSIONS,shardFor,cloningTemplate,compareDNA,designPrimers,bindingCheck,fastaText} from './clone-core.mjs?v=20261019-clone3';
 const $=id=>document.getElementById(id), labels=Object.fromEntries(VERSIONS), DATA='./data/kiwi-20261019/';
 let revision=0,manifest=null,source=null,selected=new Map(),candidateLists=new Map(),comparisons=[],activePair=null,primerResult=null,primerReport='',worker=null,jobId=0;
 const jobs=new Map(),cache=new Map();
@@ -15,7 +15,7 @@ function invalidateComparison(){revision++;cancelJobs();comparisons=[];activePai
 function clearGenes(){invalidateComparison();source=null;selected=new Map();candidateLists=new Map();$('gene-results').hidden=true;$('gene-cards').replaceChildren();}
 async function jsonFetch(path,gzip=false){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),60000);
- try{const r=await fetch(DATA+path+(gzip?'':'?v=20261019-clone2'),{signal:controller.signal});if(!r.ok)throw new Error(`参考数据读取失败（HTTP ${r.status}），请稍后重试。`);if(!gzip)return await r.json();
+ try{const r=await fetch(DATA+path+(gzip?'':'?v=20261019-clone3'),{signal:controller.signal});if(!r.ok)throw new Error(`参考数据读取失败（HTTP ${r.status}），请稍后重试。`);if(!gzip)return await r.json();
  const b=new Uint8Array(await r.arrayBuffer());let decoded;
  if(b[0]===31&&b[1]===139){if(typeof DecompressionStream==='undefined')throw new Error('此浏览器不支持参考库解压，请使用近期版本的 Chrome、Edge、Firefox 或 Safari。');decoded=await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).text();}else decoded=new TextDecoder().decode(b);
  return JSON.parse(decoded);
@@ -68,7 +68,7 @@ $('clone-template').addEventListener('change',()=>{revision++;cancelJobs();clear
 $('remove-stop').addEventListener('change',()=>{revision++;cancelJobs();clearPrimer();updateTemplate();});
 function task(type,data){
  if(typeof Worker==='undefined')return new Promise((resolve,reject)=>setTimeout(()=>{try{if(type==='compare')resolve(compareDNA(data.a,data.b));else{const r=designPrimers(data.sequence,data.options);for(const p of r.pairs)p.binding=data.references.map(x=>({name:x.name,forward:bindingCheck(p.forward.sequence,x.sequence),reverse:bindingCheck(p.reverse.sequence,x.sequence,true)}));resolve(r);}}catch(e){reject(e);}},0));
- if(!worker){worker=new Worker(new URL('./clone-worker.mjs?v=20261019-clone2',import.meta.url),{type:'module'});worker.onmessage=({data})=>{const j=jobs.get(data.id);if(!j)return;clearTimeout(j.timer);jobs.delete(data.id);data.error?j.reject(new Error(data.error)):j.resolve(data.result);};worker.onerror=()=>{for(const j of jobs.values()){clearTimeout(j.timer);j.reject(new Error('后台计算无法启动，请刷新页面重试。'));}jobs.clear();worker.terminate();worker=null;};}
+ if(!worker){worker=new Worker(new URL('./clone-worker.mjs?v=20261019-clone3',import.meta.url),{type:'module'});worker.onmessage=({data})=>{const j=jobs.get(data.id);if(!j)return;clearTimeout(j.timer);jobs.delete(data.id);data.error?j.reject(new Error(data.error)):j.resolve(data.result);};worker.onerror=()=>{for(const j of jobs.values()){clearTimeout(j.timer);j.reject(new Error('后台计算无法启动，请刷新页面重试。'));}jobs.clear();worker.terminate();worker=null;};}
  return new Promise((resolve,reject)=>{const id=++jobId;const timer=setTimeout(()=>{jobs.delete(id);reject(new Error('计算超时，请缩短片段或下载后离线处理。'));},120000);jobs.set(id,{resolve,reject,timer});worker.postMessage({id,type,...data});});
 }
 $('compare-genes').addEventListener('click',async()=>{

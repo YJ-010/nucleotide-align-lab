@@ -75,7 +75,6 @@
       }
     }
   ],
-  "ready": false,
-  "release": "20261019-clone2",
-  "status": "自动编号查询尚未开放；手动序列比较与引物设计可用。"
+  "ready": true,
+  "release": "20261019-clone3"
 }

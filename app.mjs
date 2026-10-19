@@ -1,5 +1,5 @@
-import { alignSequences, reverseComplement, toAlignedFasta, toClustal, toText } from "./align-core.mjs?v=20261019-clone2";
-import { parseInputText, readSequenceFile, qualitySummary, trimRead } from "./sequencing.mjs?v=20261019-clone2";
+import { alignSequences, reverseComplement, toAlignedFasta, toClustal, toText } from "./align-core.mjs?v=20261019-clone3";
+import { parseInputText, readSequenceFile, qualitySummary, trimRead } from "./sequencing.mjs?v=20261019-clone3";
 
 const $ = id => document.getElementById(id);
 const input = $("sequence-input");
