@@ -1,4 +1,4 @@
-import { parseSequences } from "./align-core.mjs?v=20261019-sanger1";
+import { parseSequences } from "./align-core.mjs?v=20261019-clone1";
 
 const DNA = /^[ACGTRYSWKMBDHVN]+$/;
 const ascii = bytes => Array.from(bytes, byte => String.fromCharCode(byte)).join("");

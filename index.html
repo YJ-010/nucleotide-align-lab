@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#102925">
-  <meta name="description" content="免费、免登录的核苷酸序列比对工具。直接导入 Sanger AB1、SEQ、FASTA、FASTQ，查看峰图、质量和测序片段比对；支持 GenBank/ApE 与 CLUSTAL。">
-  <title>核苷酸序列比对 · SeqLab</title>
-  <link rel="stylesheet" href="./styles.css?v=20261019-sanger1">
+  <meta name="description" content="免费、免登录的序列研究工作台。支持 AB1 测序比对、猕猴桃四参考版本同源基因查询、CDS 与 2 kb 上游区比较及克隆引物初筛。">
+  <title>SeqLab · 序列比对与猕猴桃克隆设计</title>
+  <link rel="stylesheet" href="./styles.css?v=20261019-clone1">
 </head>
 <body>
   <header class="site-header">
     <div class="shell nav-row">
       <a class="brand" href="#top" aria-label="SeqLab 首页">
         <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span>SeqLab <small>核苷酸比对</small></span>
+        <span>SeqLab <small>序列研究工作台</small></span>
       </a>
       <div class="header-actions">
         <span class="privacy-indicator"><span class="pulse"></span> 浏览器本地计算</span>
@@ -22,7 +22,12 @@
     </div>
   </header>
 
+  <nav class="shell workspace-nav" role="tablist" aria-label="研究工作区">
+    <button id="sequence-tab" class="workspace-tab active" type="button" role="tab" aria-controls="sequence-workspace" aria-selected="true">测序与序列比对 <small>AB1 / FASTA / ApE</small></button>
+    <button id="clone-tab" class="workspace-tab" type="button" role="tab" aria-controls="clone-workspace" aria-selected="false">猕猴桃基因克隆 <small>四个参考版本 · CDS · 启动子 · 引物</small></button>
+  </nav>
   <main id="top">
+  <div id="sequence-workspace" role="tabpanel" aria-labelledby="sequence-tab">
     <section class="intro shell">
       <div class="eyebrow"><span class="eyebrow-line"></span> SEQUENCE ALIGNMENT STUDIO <span class="eyebrow-line"></span></div>
       <h1>把序列放进来，<em>差异一眼看清。</em></h1>
@@ -150,8 +155,66 @@
       </div>
       <p class="method-note">本工具提供全局比对与测序片段定位（参照两端不罚分），多个序列以第一条为中心合并。匹配 +2、模糊兼容 0、不匹配 −1、缺口 −2。保留 IUPAC 模糊碱基，不自动判定杂合突变。复杂长片段、结构变异和发表级分析请用专业软件复核；不生成 DNAMAN 专有工程文件。</p>
     </section>
+  </div>
+  <div id="clone-workspace" role="tabpanel" aria-labelledby="clone-tab" hidden>
+    <section class="intro shell clone-intro">
+      <div class="eyebrow">KIWIFRUIT · FROM GENE ID TO CLONING</div>
+      <h1>从一个基因编号，<em>找到合适的克隆序列。</em></h1>
+      <p>四个参考版本的查询功能已准备。您可先直接粘贴序列，分别比较 CDS 和上游区，再为选定模板生成克隆引物；自动编号查询待参考库发布。</p>
+      <div class="intro-pills"><span>Hong Yang v2</span><span>Hong Yang v3</span><span>Red5</span><span>White v1.0</span></div>
+    </section>
+    <section class="shell clone-start">
+      <div class="panel clone-query">
+        <div class="panel-heading"><div><span class="section-number">01 / FIND</span><h2>查找基因与同源候选</h2></div><button id="clone-example" class="text-button" type="button">试用真实参考示例 ↗</button></div>
+        <form id="gene-form" class="gene-form">
+          <label>来源版本<select id="gene-version"><option value="auto">自动识别编号</option><option value="hy2">Hong Yang v2</option><option value="hy3">Hong Yang v3</option><option value="red5">Red5</option><option value="white">White v1.0</option></select></label>
+          <label class="gene-id-field">基因／转录本编号<input id="gene-id" autocomplete="off" spellcheck="false" placeholder="例如 Actinidia03760、Acc09874"></label>
+          <button id="gene-search" class="primary-button" type="submit">查询四个版本 →</button>
+        </form>
+        <p class="field-hint">支持 Ach…、Actinidia…、Acc…、DTZ79_… 编号。一个版本显示最多 3 个蛋白同源候选，可手动切换；基因编号默认取最长 CDS 转录本。</p>
+        <div id="gene-status" class="status" role="status" aria-live="polite">正在读取参考数据目录…</div>
+      </div>
+      <aside class="clone-guide"><span class="section-number">YOUR WORKFLOW</span><h3>先比较，再定模板</h3><ol><li>核对四个版本的候选基因</li><li>查看 CDS / 上游区相似度</li><li>选与实验材料相符的版本</li><li>生成并导出克隆引物</li></ol><p>“上游 2000”按 <strong>2000 bp（2 kb）</strong>计算。</p></aside>
+    </section>
+    <section class="shell panel manual-panel">
+      <div class="panel-heading"><div><span class="section-number">LOCAL SEQUENCES</span><h2>直接粘贴序列进行比较与引物设计</h2></div><button id="manual-example" class="text-button" type="button">试用模拟序列</button></div>
+      <p class="field-hint">参考库未发布前，也可把已取得的 CDS 或上游区序列粘贴在这里。所有序列按基因转录方向的 5′→3′ 输入；上游区最多 2000 bp。支持单条 FASTA 或纯 DNA，空白版本不加入分析。</p>
+      <p id="manual-demo-note" class="gene-warning" hidden>当前是模拟序列，只用于演示交互和引物计算，不代表这四个参考基因组的真实基因或同源关系。</p>
+      <div id="manual-fields" class="manual-fields"></div>
+      <button id="manual-use" class="primary-button" type="button">使用这些序列 →</button>
+      <div id="manual-status" class="status" role="status" aria-live="polite"></div>
+    </section>
+    <section id="gene-results" class="shell clone-results" hidden>
+      <div class="section-bar"><div><span class="section-number">CANDIDATES</span><h2 id="candidate-title">四版本候选基因</h2></div><span id="candidate-note" class="field-hint">互为最佳匹配是同源候选证据，不等于已证实的直系同源。</span></div>
+      <div id="gene-cards" class="gene-cards"></div>
+      <section class="panel clone-comparison">
+        <div class="panel-heading"><div><span class="section-number">02 / COMPARE</span><h2>比较序列，选择克隆模板</h2></div><button id="clone-download-fasta" type="button" class="small-action">下载四版本 FASTA ↓</button></div>
+        <div class="clone-controls">
+          <label>比较对象<select id="clone-kind"><option value="cds">CDS · 完整编码序列</option><option value="promoter">启动子候选 · CDS 上游区</option></select></label>
+          <label id="promoter-setting" hidden>上游长度（bp）<input id="promoter-length" type="number" min="60" max="2000" step="1" value="2000"></label>
+          <button id="compare-genes" class="primary-button" type="button">比较当前候选 →</button>
+        </div>
+        <p id="sequence-definition" class="field-hint">CDS 从同版本基因组按注释拼接，并统一到转录方向。全长一致率将缺口和不确定碱基计入分母。</p>
+        <div id="compare-status" class="status" role="status" aria-live="polite"></div>
+        <div id="comparison-matrix" class="comparison-matrix"></div>
+        <div id="pair-detail" class="pair-detail" hidden><div class="section-bar"><h3 id="pair-title"></h3><button id="pair-download" type="button" class="small-action">下载这组对齐 FASTA ↓</button></div><p id="pair-stats" class="field-hint"></p><pre id="pair-alignment" tabindex="0"></pre></div>
+        <div class="template-area"><label>用于克隆的模板<select id="clone-template"></select></label><label class="stop-setting"><input id="remove-stop" type="checkbox"> CDS 去掉终止密码子（用于融合表达）</label><p id="template-summary"></p><details><summary>展开模板序列与坐标</summary><pre id="template-sequence" tabindex="0"></pre><button id="template-download" type="button" class="small-action">下载当前模板 FASTA ↓</button><button id="send-to-alignment" type="button" class="small-action">送到测序比对作为参照 →</button></details></div>
+      </section>
+      <section class="panel clone-primer">
+        <div class="panel-heading"><div><span class="section-number">03 / DESIGN</span><h2>生成克隆引物</h2></div><span class="result-state">固定目标片段两端</span></div>
+        <p class="field-hint">正向引物从模板第 1 位开始，反向引物覆盖模板末端；不会为了获得引物而悄悄缩短片段。CDS 使用 cDNA 模板，上游区使用基因组 DNA。</p>
+        <div class="clone-controls primer-main-controls"><label>目标 Tm（°C）<input id="primer-tm" type="number" min="50" max="70" value="60" step="0.5"></label><label>最短（nt）<input id="primer-min" type="number" min="18" max="35" value="18"></label><label>最长（nt）<input id="primer-max" type="number" min="18" max="35" value="30"></label><button id="design-primers" class="primary-button" type="button">生成候选引物 →</button></div>
+        <details class="primer-options"><summary>反应条件与 5′ 附加序列（可选）</summary><div class="clone-controls"><label>单价盐（mM）<input id="primer-salt" type="number" value="50" min="1" max="500"></label><label>Mg²⁺（mM）<input id="primer-mg" type="number" value="1.5" min="0" max="10" step="0.1"></label><label>总 dNTP（mM）<input id="primer-dntp" type="number" value="0.2" min="0" max="10" step="0.1"></label><label>总寡核苷酸浓度（nM）<input id="primer-conc" type="number" value="250" min="1" max="2000"></label></div><div class="tail-fields"><label>正向 5′ 附加序列<input id="forward-tail" autocomplete="off" spellcheck="false" placeholder="留空；或输入酶切位点／同源臂"></label><label>反向 5′ 附加序列<input id="reverse-tail" autocomplete="off" spellcheck="false" placeholder="按最终订购引物的 5′→3′ 方向输入"></label></div><p class="field-hint">Tm 只按退火区计算。这里不自动选择载体或酶切位点；附加序列的方向、读框和连接方式请按载体核对。</p></details>
+        <div id="primer-status" class="status" role="status" aria-live="polite"></div><div id="primer-results"></div>
+        <div id="primer-downloads" class="download-group" hidden><button id="primer-copy" class="small-action" type="button">复制引物与报告</button><button id="primer-download" class="small-action filled" type="button">下载引物报告 ↓</button><button id="primer-tsv" class="small-action" type="button">下载订购清单 TSV ↓</button></div>
+        <p class="method-note">引物为计算初筛候选：最近邻法估算 Tm，并筛查连续互补、同聚物和简化发夹茎；未进行完整二级结构热力学分析或全基因组特异性验证。其他版本的匹配检查仅限本页选中的序列。订购前请用 Primer-BLAST / Primer3 等结合实际模板复核。</p>
+      </section>
+    </section>
+    <section id="clone-help" class="shell clone-help panel"><div class="panel-heading"><div><span class="section-number">REFERENCE & METHOD</span><h2>版本与判断依据</h2></div></div><div class="help-grid"><article><h3>先看实验材料</h3><p>高一致率不代表可任意替换材料。页面优先选择 White 模板（如有候选），您仍可切换；同一品种不同样本也可能存在变异。CDS 与上游区分别比较，不合并成一个分数。</p></article><article><h3>启动子范围有明确边界</h3><p>这里提取注释 CDS 起点之前最多 2000 bp，排除 CDS，自动对负链反向互补。它可能包含 5′UTR、邻近基因或重复区，不等同于已验证的 TSS 启动子。缺失 ATG、短序列和异常注释会提示。</p></article><article><h3>保留可追溯的结果</h3><p>同源候选依据蛋白相似性、双向最佳匹配和覆盖率筛选，尚未整合共线性证据。下载时保留版本、基因编号、转录本和坐标；异常重叠 CDS 模型不进入序列库。</p></article></div><details><summary>查看参考库来源、规模与算法</summary><div id="reference-catalog"></div><p>序列比较：全局 Needleman–Wunsch，匹配 +2、不匹配 −1、缺口 −2；全长一致率 = 明确相同碱基 / 全部比对列。N 不计为匹配。近似覆盖 = 无缺口配对碱基 / 原序列长度。</p><p>Tm：SantaLucia 最近邻参数、熵盐校正及 Mg/dNTP 钠当量；对称序列使用对称校正。默认条件可在上方修改。连续互补初筛阈值：3′ 端互补 &lt;5 bp、发夹连续茎 &lt;6 bp、同聚物 ≤5、两条引物 ΔTm ≤3 °C、GC 25–75%。</p><p><a href="https://biopython.org/docs/latest/api/Bio.SeqUtils.MeltingTemp.html" target="_blank" rel="noopener">Tm 方法说明 ↗</a> · <a href="https://github.com/bbuchfink/diamond" target="_blank" rel="noopener">DIAMOND 同源候选搜索 ↗</a> · <a href="https://primer3.org/" target="_blank" rel="noopener">Primer3 复核 ↗</a></p></details></section>
+  </div>
   </main>
-  <footer class="footer"><div class="shell"><span class="footer-brand">SeqLab <span>核苷酸比对</span></span><span>为快速查看序列差异而设计 · 免费公开使用</span></div></footer>
-  <script type="module" src="./app.mjs?v=20261019-sanger1"></script>
+  <footer class="footer"><div class="shell"><span class="footer-brand">SeqLab <span>序列比对与克隆设计</span></span><span>从序列差异到克隆候选 · 免费公开使用</span></div></footer>
+  <script type="module" src="./app.mjs?v=20261019-clone1"></script>
+  <script type="module" src="./clone-app.mjs?v=20261019-clone1"></script>
 </body>
 </html>

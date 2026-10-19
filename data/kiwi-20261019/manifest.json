@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "ready": false,
+  "status": "参考序列库尚待公开发布确认；手动序列比较与引物设计可用。",
+  "versions": [
+    {
+      "id": "hy2",
+      "label": "Hong Yang v2",
+      "source": "https://kiwifruitgenome.org/ftp/A_chinensis/Hongyang/v2.0/"
+    },
+    {
+      "id": "hy3",
+      "label": "Hong Yang v3",
+      "source": "https://doi.org/10.6084/m9.figshare.10046558"
+    },
+    {
+      "id": "white",
+      "label": "White v1.0",
+      "source": "https://kiwifruitgenome.org/ftp/A_eriantha/White/v1.0/"
+    },
+    {
+      "id": "red5",
+      "label": "Red5 (PS1_1.69.0)",
+      "source": "https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_003024255.1/"
+    }
+  ]
+}

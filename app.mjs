@@ -1,5 +1,5 @@
-import { alignSequences, reverseComplement, toAlignedFasta, toClustal, toText } from "./align-core.mjs?v=20261019-sanger1";
-import { parseInputText, readSequenceFile, qualitySummary, trimRead } from "./sequencing.mjs?v=20261019-sanger1";
+import { alignSequences, reverseComplement, toAlignedFasta, toClustal, toText } from "./align-core.mjs?v=20261019-clone1";
+import { parseInputText, readSequenceFile, qualitySummary, trimRead } from "./sequencing.mjs?v=20261019-clone1";
 
 const $ = id => document.getElementById(id);
 const input = $("sequence-input");
@@ -511,4 +511,14 @@ $("download-button").addEventListener("click", () => {
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   setStatus(`已下载 ${anchor.download}。`);
+});
+
+// Receive a selected cloning template without sending sequence data to a server.
+window.addEventListener('seqlab-reference', event => {
+  const record = event.detail;
+  if (!record || typeof record.sequence !== 'string' || !/^[ACGTRYSWKMBDHVN]+$/.test(record.sequence)) return;
+  setRecords([{name:record.name || '克隆模板', sequence:record.sequence, format:'参考基因组'}]);
+  $('alignment-mode').value = 'fitting';
+  $('alignment-mode').dispatchEvent(new Event('change'));
+  setStatus('克隆模板已设为参照。再上传测序公司返回的 AB1 / SEQ 文件即可比对。');
 });
