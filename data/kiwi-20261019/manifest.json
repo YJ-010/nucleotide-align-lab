@@ -1,27 +1,81 @@
 {
   "schema": 1,
-  "ready": false,
-  "status": "参考序列库尚待公开发布确认；手动序列比较与引物设计可用。",
+  "built": "2026-10-19",
+  "upstreamLimit": 2000,
+  "upstreamAnchor": "annotated CDS 5-prime boundary (ATG where complete), excludes CDS; transcriptional orientation",
+  "homology": "DIAMOND blastp sensitive; E <= 1e-10; identity >= 30%; query/target coverage >= 40%; top 3 per reference; reciprocal top hits are candidates, not proven orthologs",
+  "representative": "longest genomic CDS per gene; exact transcript identifiers retain isoform; homolog search uses representative proteins",
   "versions": [
     {
       "id": "hy2",
       "label": "Hong Yang v2",
-      "source": "https://kiwifruitgenome.org/ftp/A_chinensis/Hongyang/v2.0/"
+      "source": "https://kiwifruitgenome.org/ftp/A_chinensis/Hongyang/v2.0/",
+      "geneCount": 39761,
+      "transcriptCount": 39761,
+      "proteinCount": 39761,
+      "skippedModels": {},
+      "sequenceAudit": {
+        "supplied_match": 39761
+      },
+      "sha256": {
+        "genome": "0d53cf0efd5265199dba03f262e9fb1e9e964c30aa09947ef28cd96d912b429e",
+        "gff": "23b2750ee67b863f4322a2fedffa0480fa1bacc6d350f019d421c2978474cb4e"
+      }
     },
     {
       "id": "hy3",
-      "label": "Hong Yang v3",
-      "source": "https://doi.org/10.6084/m9.figshare.10046558"
+      "label": "Hong Yang v3 update",
+      "source": "https://doi.org/10.6084/m9.figshare.10046558",
+      "geneCount": 40466,
+      "transcriptCount": 40466,
+      "proteinCount": 40460,
+      "skippedModels": {},
+      "sequenceAudit": {
+        "supplied_match": 40014,
+        "supplied_mismatch": 452
+      },
+      "sha256": {
+        "genome": "f14c63c7119f9069614eb634362f53db362cdd593c7306983ad97a8f4dcd6869",
+        "gff": "17c07f6ca47e5c5289d955135b20f05eafe911fd85efeca787ed0f4a2f999808"
+      }
     },
     {
       "id": "white",
       "label": "White v1.0",
-      "source": "https://kiwifruitgenome.org/ftp/A_eriantha/White/v1.0/"
+      "source": "https://kiwifruitgenome.org/ftp/A_eriantha/White/v1.0/",
+      "geneCount": 42985,
+      "transcriptCount": 42985,
+      "proteinCount": 42920,
+      "skippedModels": {
+        "overlapping_CDS": 3
+      },
+      "sequenceAudit": {
+        "supplied_match": 42985
+      },
+      "sha256": {
+        "genome": "b4c4f4fe95e6e32357a203cdb5cf830300abd0d7bca315b8b06d36fe41b8d537",
+        "gff": "71b40edb5c122691b4c43547c0d70d2457bcae7d420c2fdc82bd3f6766810591"
+      }
     },
     {
       "id": "red5",
       "label": "Red5 (PS1_1.69.0)",
-      "source": "https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_003024255.1/"
+      "source": "https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_003024255.1/",
+      "geneCount": 33044,
+      "transcriptCount": 33115,
+      "proteinCount": 33042,
+      "skippedModels": {},
+      "sequenceAudit": {
+        "publishedProteinMatch": 33069,
+        "publishedProteinMismatch": 46
+      },
+      "sha256": {
+        "genome": "4f999978cb26c0d05335e7b167703e3da2eddc1c807f9de86ed02401b8a9f025",
+        "gff": "5d0d3e615a665787a9a892ddfa750d030f63f33ff9936b249f08262de0e39f9c"
+      }
     }
-  ]
+  ],
+  "ready": false,
+  "release": "20261019-clone2",
+  "status": "自动编号查询尚未开放；手动序列比较与引物设计可用。"
 }

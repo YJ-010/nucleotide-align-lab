@@ -1,4 +1,4 @@
-import {compareDNA,designPrimers,bindingCheck} from './clone-core.mjs?v=20261019-clone1';
+import {compareDNA,designPrimers,bindingCheck} from './clone-core.mjs?v=20261019-clone2';
 self.onmessage=({data})=>{const {id,type}=data;try{
  let result;
  if(type==='compare')result=compareDNA(data.a,data.b);

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#102925">
   <meta name="description" content="免费、免登录的序列研究工作台。支持 AB1 测序比对、猕猴桃四参考版本同源基因查询、CDS 与 2 kb 上游区比较及克隆引物初筛。">
   <title>SeqLab · 序列比对与猕猴桃克隆设计</title>
-  <link rel="stylesheet" href="./styles.css?v=20261019-clone1">
+  <link rel="stylesheet" href="./styles.css?v=20261019-clone2">
 </head>
 <body>
   <header class="site-header">
@@ -160,14 +160,14 @@
     <section class="intro shell clone-intro">
       <div class="eyebrow">KIWIFRUIT · FROM GENE ID TO CLONING</div>
       <h1>从一个基因编号，<em>找到合适的克隆序列。</em></h1>
-      <p>四个参考版本的查询功能已准备。您可先直接粘贴序列，分别比较 CDS 和上游区，再为选定模板生成克隆引物；自动编号查询待参考库发布。</p>
-      <div class="intro-pills"><span>Hong Yang v2</span><span>Hong Yang v3</span><span>Red5</span><span>White v1.0</span></div>
+      <p>直接粘贴已有的 CDS 和上游区序列，比较不同版本，并为选定模板生成克隆引物；自动编号查询尚未开放。</p>
+      <div class="intro-pills"><span>Hong Yang v2</span><span>Hong Yang v3 update</span><span>Red5</span><span>White v1.0</span></div>
     </section>
     <section class="shell clone-start">
       <div class="panel clone-query">
         <div class="panel-heading"><div><span class="section-number">01 / FIND</span><h2>查找基因与同源候选</h2></div><button id="clone-example" class="text-button" type="button">试用真实参考示例 ↗</button></div>
         <form id="gene-form" class="gene-form">
-          <label>来源版本<select id="gene-version"><option value="auto">自动识别编号</option><option value="hy2">Hong Yang v2</option><option value="hy3">Hong Yang v3</option><option value="red5">Red5</option><option value="white">White v1.0</option></select></label>
+          <label>来源版本<select id="gene-version"><option value="auto">自动识别编号</option><option value="hy2">Hong Yang v2</option><option value="hy3">Hong Yang v3 update</option><option value="red5">Red5</option><option value="white">White v1.0</option></select></label>
           <label class="gene-id-field">基因／转录本编号<input id="gene-id" autocomplete="off" spellcheck="false" placeholder="例如 Actinidia03760、Acc09874"></label>
           <button id="gene-search" class="primary-button" type="submit">查询四个版本 →</button>
         </form>
@@ -176,14 +176,17 @@
       </div>
       <aside class="clone-guide"><span class="section-number">YOUR WORKFLOW</span><h3>先比较，再定模板</h3><ol><li>核对四个版本的候选基因</li><li>查看 CDS / 上游区相似度</li><li>选与实验材料相符的版本</li><li>生成并导出克隆引物</li></ol><p>“上游 2000”按 <strong>2000 bp（2 kb）</strong>计算。</p></aside>
     </section>
-    <section class="shell panel manual-panel">
+    <details id="manual-panel" class="shell panel manual-panel">
+      <summary>已有序列？展开直接粘贴（可选）</summary>
+      <div class="manual-content">
       <div class="panel-heading"><div><span class="section-number">LOCAL SEQUENCES</span><h2>直接粘贴序列进行比较与引物设计</h2></div><button id="manual-example" class="text-button" type="button">试用模拟序列</button></div>
-      <p class="field-hint">参考库未发布前，也可把已取得的 CDS 或上游区序列粘贴在这里。所有序列按基因转录方向的 5′→3′ 输入；上游区最多 2000 bp。支持单条 FASTA 或纯 DNA，空白版本不加入分析。</p>
+      <p class="field-hint">也可直接比较您已有的 CDS 或上游区序列。所有序列按基因转录方向的 5′→3′ 输入；上游区最多 2000 bp。支持单条 FASTA 或纯 DNA，空白版本不加入分析。</p>
       <p id="manual-demo-note" class="gene-warning" hidden>当前是模拟序列，只用于演示交互和引物计算，不代表这四个参考基因组的真实基因或同源关系。</p>
       <div id="manual-fields" class="manual-fields"></div>
       <button id="manual-use" class="primary-button" type="button">使用这些序列 →</button>
       <div id="manual-status" class="status" role="status" aria-live="polite"></div>
-    </section>
+      </div>
+    </details>
     <section id="gene-results" class="shell clone-results" hidden>
       <div class="section-bar"><div><span class="section-number">CANDIDATES</span><h2 id="candidate-title">四版本候选基因</h2></div><span id="candidate-note" class="field-hint">互为最佳匹配是同源候选证据，不等于已证实的直系同源。</span></div>
       <div id="gene-cards" class="gene-cards"></div>
@@ -214,7 +217,7 @@
   </div>
   </main>
   <footer class="footer"><div class="shell"><span class="footer-brand">SeqLab <span>序列比对与克隆设计</span></span><span>从序列差异到克隆候选 · 免费公开使用</span></div></footer>
-  <script type="module" src="./app.mjs?v=20261019-clone1"></script>
-  <script type="module" src="./clone-app.mjs?v=20261019-clone1"></script>
+  <script type="module" src="./app.mjs?v=20261019-clone2"></script>
+  <script type="module" src="./clone-app.mjs?v=20261019-clone2"></script>
 </body>
 </html>

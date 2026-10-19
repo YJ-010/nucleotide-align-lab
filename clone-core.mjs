@@ -1,6 +1,6 @@
-import { reverseComplement } from './align-core.mjs?v=20261019-clone1';
+import { reverseComplement } from './align-core.mjs?v=20261019-clone2';
 export { reverseComplement };
-export const VERSIONS=[['hy2','Hong Yang v2'],['hy3','Hong Yang v3'],['red5','Red5'],['white','White v1.0']];
+export const VERSIONS=[['hy2','Hong Yang v2'],['hy3','Hong Yang v3 update'],['red5','Red5'],['white','White v1.0']];
 export function shardFor(id){let h=2166136261;for(const c of id.toLowerCase())h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return (h%64).toString(16).padStart(2,'0');}
 export function promoterSequence(record,length=2000){
  if(!Number.isInteger(length)||length<60||length>2000)throw new Error('上游克隆片段长度请填 60–2000 bp。');

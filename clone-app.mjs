@@ -1,5 +1,5 @@
-import {parseSequences} from './align-core.mjs?v=20261019-clone1';
-import {VERSIONS,shardFor,cloningTemplate,compareDNA,designPrimers,bindingCheck,fastaText} from './clone-core.mjs?v=20261019-clone1';
+import {parseSequences} from './align-core.mjs?v=20261019-clone2';
+import {VERSIONS,shardFor,cloningTemplate,compareDNA,designPrimers,bindingCheck,fastaText} from './clone-core.mjs?v=20261019-clone2';
 const $=id=>document.getElementById(id), labels=Object.fromEntries(VERSIONS), DATA='./data/kiwi-20261019/';
 let revision=0,manifest=null,source=null,selected=new Map(),candidateLists=new Map(),comparisons=[],activePair=null,primerResult=null,primerReport='',worker=null,jobId=0;
 const jobs=new Map(),cache=new Map();
@@ -15,7 +15,7 @@ function invalidateComparison(){revision++;cancelJobs();comparisons=[];activePai
 function clearGenes(){invalidateComparison();source=null;selected=new Map();candidateLists=new Map();$('gene-results').hidden=true;$('gene-cards').replaceChildren();}
 async function jsonFetch(path,gzip=false){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),60000);
- try{const r=await fetch(DATA+path,{signal:controller.signal});if(!r.ok)throw new Error(`参考数据读取失败（HTTP ${r.status}），请稍后重试。`);if(!gzip)return await r.json();
+ try{const r=await fetch(DATA+path+(gzip?'':'?v=20261019-clone2'),{signal:controller.signal});if(!r.ok)throw new Error(`参考数据读取失败（HTTP ${r.status}），请稍后重试。`);if(!gzip)return await r.json();
  const b=new Uint8Array(await r.arrayBuffer());let decoded;
  if(b[0]===31&&b[1]===139){if(typeof DecompressionStream==='undefined')throw new Error('此浏览器不支持参考库解压，请使用近期版本的 Chrome、Edge、Firefox 或 Safari。');decoded=await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).text();}else decoded=new TextDecoder().decode(b);
  return JSON.parse(decoded);
@@ -26,22 +26,22 @@ async function loadGene(version,id){const index=await cached(`${version}/index.j
 function guess(id){if(/^Ach\d/i.test(id))return 'hy2';if(/^Actinidia\d/i.test(id))return 'hy3';if(/^(?:gene-)?(?:CEY00_)?Acc\d/i.test(id)||/Acc\d+\.\d+_mrna/.test(id))return 'red5';if(/^DTZ79_/i.test(id))return 'white';throw new Error('无法自动识别这个编号，请手动选择来源版本。');}
 async function loadCatalog(){
  if(manifest)return manifest;manifest=await jsonFetch('manifest.json');const box=$('reference-catalog');box.replaceChildren();
- for(const v of manifest.versions){const p=el('div',undefined,'catalog-entry'),a=el('a',v.label);a.href=v.source;a.target='_blank';a.rel='noopener';p.append(a,document.createTextNode(manifest.ready===false?' · 自动编号查询待参考库发布':` · ${v.geneCount.toLocaleString()} 个基因 / ${v.transcriptCount.toLocaleString()} 个转录本`));if(v.sequenceAudit?.supplied_mismatch)p.append(el('div',`${v.sequenceAudit.supplied_mismatch} 个模型与配套 CDS 文件有差异，对应结果会提示。`));box.append(p);}
- if(manifest.ready===false){for(const id of ['gene-id','gene-version','gene-search','clone-example'])$(id).disabled=true;box.append(el('p','当前线上提供手动序列比较与克隆引物初筛。四版本参考序列库已准备，尚待确认公开发布范围；当前不会按基因编号返回序列。'));}
+ for(const v of manifest.versions){const p=el('div',undefined,'catalog-entry'),a=el('a',v.label);a.href=v.source;a.target='_blank';a.rel='noopener';p.append(a,document.createTextNode(manifest.ready===false?' · 自动编号查询尚未开放':` · ${v.geneCount.toLocaleString()} 个基因 / ${v.transcriptCount.toLocaleString()} 个转录本`));if(v.sequenceAudit?.supplied_mismatch)p.append(el('div',`${v.sequenceAudit.supplied_mismatch} 个模型与配套 CDS 文件有差异，对应结果会提示。`));if(v.sequenceAudit?.publishedProteinMismatch)p.append(el('div',`${v.sequenceAudit.publishedProteinMismatch} 个模型的翻译与发布蛋白有差异，对应结果会提示。`));box.append(p);}
+ if(manifest.ready===false){$('manual-panel').open=true;for(const id of ['gene-id','gene-version','gene-search','clone-example'])$(id).disabled=true;document.querySelector('.clone-intro > p').textContent='直接粘贴已有的 CDS 和上游区序列，比较不同版本，并为选定模板生成克隆引物；自动编号查询尚未开放。';box.append(el('p','当前可使用下方的手动序列比较与克隆引物初筛。四版本参考库尚未公开接入，暂不按基因编号返回序列。'));}
  else{document.querySelector('.clone-intro > p').textContent='查询四个参考版本的同源候选，分别比较 CDS 和上游区，再为选定模板生成克隆引物。';box.append(el('p',`建库日期：${manifest.built}。Red5 使用 GenBank GCA_003024255.1（PS1_1.69.0），保留 Acc 及 NCBI 编号别名。`));}
  box.append(el('p','手动导入的记录不自动确认版本、同源关系或基因组坐标。基因编号检索库使用 DIAMOND sensitive 蛋白候选，E≤1e−10、identity≥30%、双向覆盖均≥40%，保留前三名；未整合共线性。'));
  return manifest;
 }
-loadCatalog().then(m=>{if(!source)say('gene-status',m.ready===false?'自动编号查询待参考库发布。可先在下方粘贴序列，进行比较和引物设计。':`四个版本已就绪，共 ${m.versions.reduce((n,v)=>n+v.geneCount,0).toLocaleString()} 个有效基因。`);}).catch(e=>say('gene-status',e.message+' 也可在下方手动输入序列。',true));
+loadCatalog().then(m=>{if(!source)say('gene-status',m.ready===false?'自动编号查询尚未开放。可先在下方粘贴序列，进行比较和引物设计。':`四个版本已就绪，共 ${m.versions.reduce((n,v)=>n+v.geneCount,0).toLocaleString()} 个有效基因。`);}).catch(e=>{$('manual-panel').open=true;say('gene-status',e.message+' 也可在下方手动输入序列。',true);});
 for(const id of ['gene-id','gene-version'])$(id).addEventListener(id==='gene-id'?'input':'change',()=>{clearGenes();say('gene-status','输入编号后查询四个版本。');});
 $('clone-example').addEventListener('click',()=>{$('gene-id').value='Actinidia03760';$('gene-version').value='hy3';$('gene-form').dispatchEvent(new Event('submit',{cancelable:true}));});
 $('gene-form').addEventListener('submit',async e=>{
  e.preventDefault();clearGenes();const rev=revision,id=$('gene-id').value.trim();if(!id)return say('gene-status','请填写一个基因或转录本编号。',true);
  $('gene-search').disabled=true;say('gene-status','正在查询参考编号与同源候选，首次读取约需数秒…');
- try{await loadCatalog();if(manifest.ready===false)throw new Error('完整参考库尚待公开发布确认；请先使用下方手动序列入口。');const version=$('gene-version').value==='auto'?guess(id):$('gene-version').value;const record=await loadGene(version,id);if(rev!==revision)return;source=record;const next=new Map([[version,record]]),lists=new Map();const missing=[];
+ try{await loadCatalog();if(manifest.ready===false)throw new Error('自动编号查询尚未开放；请先使用下方手动序列入口。');const version=$('gene-version').value==='auto'?guess(id):$('gene-version').value;const record=await loadGene(version,id);if(rev!==revision)return;source=record;const next=new Map([[version,record]]),lists=new Map();const missing=[];
  for(const [v] of VERSIONS){if(v===version)continue;const hits=record.homologs?.[v]||[];lists.set(v,hits);if(!hits.length){missing.push(labels[v]);continue;}try{const r=await loadGene(v,hits[0].id);next.set(v,{...r,evidence:hits[0]});}catch(error){missing.push(`${labels[v]}：${error.message}`);}}
  if(rev!==revision)return;selected=next;candidateLists=lists;renderCards();renderTemplateOptions();$('gene-results').hidden=false;say('gene-status',`已读取 ${selected.size} 个版本的候选。${missing.length?'未取得候选：'+missing.join('；')+'。':''} 请核对编号与证据后比较。`);say('compare-status','选择 CDS 或上游区，点击比较当前候选。');
- }catch(error){if(rev===revision)say('gene-status',error.message,true);}finally{$('gene-search').disabled=false;}
+ }catch(error){if(rev===revision)say('gene-status',error.message,true);}finally{$('gene-search').disabled=manifest?.ready===false;}
 });
 function option(value,text){const n=el('option',text);n.value=value;return n;}
 function renderCards(){$('candidate-title').textContent=source.manual?'各版本输入序列':'四版本候选基因';$('candidate-note').textContent=source.manual?'手动输入不自动证明版本来源或同源关系。':'互为最佳匹配是同源候选证据，不等于已证实的直系同源。';const box=$('gene-cards');box.replaceChildren();for(const [v,label] of VERSIONS){const r=selected.get(v),card=el('article',undefined,'gene-card'+(source.version===v?' source':'')),head=el('div',undefined,'gene-card-heading');head.append(el('h3',label),el('span',r?.manual?'手动输入':source.version===v?'查询来源':'同源候选','section-number'));card.append(head);
@@ -68,7 +68,7 @@ $('clone-template').addEventListener('change',()=>{revision++;cancelJobs();clear
 $('remove-stop').addEventListener('change',()=>{revision++;cancelJobs();clearPrimer();updateTemplate();});
 function task(type,data){
  if(typeof Worker==='undefined')return new Promise((resolve,reject)=>setTimeout(()=>{try{if(type==='compare')resolve(compareDNA(data.a,data.b));else{const r=designPrimers(data.sequence,data.options);for(const p of r.pairs)p.binding=data.references.map(x=>({name:x.name,forward:bindingCheck(p.forward.sequence,x.sequence),reverse:bindingCheck(p.reverse.sequence,x.sequence,true)}));resolve(r);}}catch(e){reject(e);}},0));
- if(!worker){worker=new Worker(new URL('./clone-worker.mjs?v=20261019-clone1',import.meta.url),{type:'module'});worker.onmessage=({data})=>{const j=jobs.get(data.id);if(!j)return;clearTimeout(j.timer);jobs.delete(data.id);data.error?j.reject(new Error(data.error)):j.resolve(data.result);};worker.onerror=()=>{for(const j of jobs.values()){clearTimeout(j.timer);j.reject(new Error('后台计算无法启动，请刷新页面重试。'));}jobs.clear();worker.terminate();worker=null;};}
+ if(!worker){worker=new Worker(new URL('./clone-worker.mjs?v=20261019-clone2',import.meta.url),{type:'module'});worker.onmessage=({data})=>{const j=jobs.get(data.id);if(!j)return;clearTimeout(j.timer);jobs.delete(data.id);data.error?j.reject(new Error(data.error)):j.resolve(data.result);};worker.onerror=()=>{for(const j of jobs.values()){clearTimeout(j.timer);j.reject(new Error('后台计算无法启动，请刷新页面重试。'));}jobs.clear();worker.terminate();worker=null;};}
  return new Promise((resolve,reject)=>{const id=++jobId;const timer=setTimeout(()=>{jobs.delete(id);reject(new Error('计算超时，请缩短片段或下载后离线处理。'));},120000);jobs.set(id,{resolve,reject,timer});worker.postMessage({id,type,...data});});
 }
 $('compare-genes').addEventListener('click',async()=>{
@@ -120,7 +120,7 @@ $('manual-use').addEventListener('click',()=>{
  if(!records.length)throw new Error('请至少粘贴一个版本的一条 CDS 或上游区序列。');selected=new Map(records.map(r=>[r.version,r]));source=records[0];candidateLists=new Map();$('clone-kind').value=records.some(r=>r.cds)?'cds':'promoter';renderCards();renderTemplateOptions();$('clone-kind').dispatchEvent(new Event('change'));$('gene-results').hidden=false;say('gene-status',`正在使用 ${records.length} 个手动输入的版本；没有运行自动同源检索。`);say('manual-status',`已载入 ${records.length} 个版本。至少两条可比较；单条即可设计引物。`);say('compare-status','选择比较对象后开始比较，或直接生成当前模板的引物。');$('manual-demo-note').hidden=!simulatedInput;
  }catch(e){say('manual-status',e.message,true);}
 });
-$('manual-example').addEventListener('click',()=>{
+$('manual-example').addEventListener('click',()=>{$('manual-panel').open=true;
  const codons=['GCC','GCT','CAG','ATC','GAC','GGT','CTG','AAC'];let seed=12073;const bases='ACGT';let up='';for(let i=0;i<2000;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;up+=bases[seed>>>30];}
  VERSIONS.forEach(([v],i)=>{const middle=Array.from({length:189},(_,k)=>codons[k%codons.length]);middle[20+i*10]=codons[(i+3)%codons.length];$(`manual-${v}-id`).value='SIMULATED_'+v.toUpperCase();$(`manual-${v}-cds`).value='ATGACCGTACAGGATCTGCAG'+middle.join('')+['TGC','ATC','AGG','TAC','CGA','GCT','TAA'].join('');const at=500+i*73;$(`manual-${v}-upstream`).value=up.slice(0,at)+bases[(bases.indexOf(up[at])+1)%4]+up.slice(at+1);});simulatedInput=true;$('manual-use').click();
 });
