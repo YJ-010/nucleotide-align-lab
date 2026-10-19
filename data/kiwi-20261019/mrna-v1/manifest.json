@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "built": "2026-10-19",
+  "alphabet": "DNA (T), spliced mRNA/cDNA representation",
+  "storage": "verified CDS plus annotated transcript prefix and suffix",
+  "versions": [
+    {
+      "id": "hy2",
+      "shards": 8,
+      "counts": {
+        "unavailable": 39761
+      },
+      "unavailableReasons": {
+        "no_exon_or_utr": 39761
+      },
+      "source": "https://kiwifruitgenome.org/ftp/A_chinensis/Hongyang/v2.0/",
+      "sha256": {
+        "genome": "0d53cf0efd5265199dba03f262e9fb1e9e964c30aa09947ef28cd96d912b429e",
+        "gff": "23b2750ee67b863f4322a2fedffa0480fa1bacc6d350f019d421c2978474cb4e"
+      }
+    },
+    {
+      "id": "hy3",
+      "shards": 8,
+      "counts": {
+        "available": 40466,
+        "exons": 40466,
+        "with_5prime_extension": 17763,
+        "with_3prime_extension": 17535,
+        "no_annotated_utr": 19523
+      },
+      "unavailableReasons": {},
+      "source": "https://doi.org/10.6084/m9.figshare.10046558",
+      "sha256": {
+        "genome": "f14c63c7119f9069614eb634362f53db362cdd593c7306983ad97a8f4dcd6869",
+        "gff": "17c07f6ca47e5c5289d955135b20f05eafe911fd85efeca787ed0f4a2f999808"
+      }
+    },
+    {
+      "id": "white",
+      "shards": 8,
+      "counts": {
+        "unavailable": 16122,
+        "available": 26863,
+        "cds_and_utr": 26863,
+        "with_5prime_extension": 20020,
+        "with_3prime_extension": 22675,
+        "no_annotated_utr": 0
+      },
+      "unavailableReasons": {
+        "no_exon_or_utr": 16122
+      },
+      "source": "https://kiwifruitgenome.org/ftp/A_eriantha/White/v1.0/",
+      "sha256": {
+        "genome": "b4c4f4fe95e6e32357a203cdb5cf830300abd0d7bca315b8b06d36fe41b8d537",
+        "gff": "71b40edb5c122691b4c43547c0d70d2457bcae7d420c2fdc82bd3f6766810591"
+      }
+    },
+    {
+      "id": "red5",
+      "shards": 8,
+      "counts": {
+        "available": 33115,
+        "exons": 33115,
+        "with_5prime_extension": 32934,
+        "with_3prime_extension": 32804,
+        "no_annotated_utr": 4
+      },
+      "unavailableReasons": {},
+      "source": "https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_003024255.1/",
+      "sha256": {
+        "genome": "4f999978cb26c0d05335e7b167703e3da2eddc1c807f9de86ed02401b8a9f025",
+        "gff": "5d0d3e615a665787a9a892ddfa750d030f63f33ff9936b249f08262de0e39f9c"
+      }
+    }
+  ],
+  "files": 32,
+  "bytes": 21676314
+}

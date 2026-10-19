@@ -76,5 +76,36 @@
     }
   ],
   "ready": true,
-  "release": "20261019-clone3"
+  "release": "20261019-clone4",
+  "transcripts": {
+    "ready": true,
+    "path": "mrna-v1",
+    "alphabet": "DNA (T)",
+    "versions": {
+      "hy2": {
+        "shards": 8,
+        "available": 0,
+        "unavailable": 39761,
+        "noAnnotatedUTR": 0
+      },
+      "hy3": {
+        "shards": 8,
+        "available": 40466,
+        "unavailable": 0,
+        "noAnnotatedUTR": 19523
+      },
+      "white": {
+        "shards": 8,
+        "available": 26863,
+        "unavailable": 16122,
+        "noAnnotatedUTR": 0
+      },
+      "red5": {
+        "shards": 8,
+        "available": 33115,
+        "unavailable": 0,
+        "noAnnotatedUTR": 4
+      }
+    }
+  }
 }

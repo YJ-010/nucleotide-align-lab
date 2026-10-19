@@ -1,4 +1,4 @@
-import { reverseComplement } from './align-core.mjs?v=20261019-clone3';
+import { reverseComplement } from './align-core.mjs?v=20261019-clone4';
 export { reverseComplement };
 export const VERSIONS=[['hy2','Hong Yang v2'],['hy3','Hong Yang v3 update'],['red5','Red5'],['white','White v1.0']];
 export function shardFor(id){let h=2166136261;for(const c of id.toLowerCase())h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return (h%64).toString(16).padStart(2,'0');}
@@ -13,15 +13,33 @@ export function promoterSequence(record,length=2000){
 }
 export function cloningTemplate(record,kind,length=2000,removeStop=false){
  if(kind==='promoter')return {...promoterSequence(record,length),kind};
+ if(kind==='mrna'){
+  if(!record.mrna)throw new Error('该记录暂无可核对的 mRNA 序列；不会以 CDS 或含内含子的基因组片段代替。');
+  return {sequence:record.mrna,kind,cdsStart:record.mrnaInfo?.cdsStart??null,cdsEnd:record.mrnaInfo?.cdsEnd??null};
+ }
+ if(kind!=='cds')throw new Error('未知序列类型。');
  if(!record.cds)throw new Error('该记录未提供 CDS 序列。');
  let sequence=record.cds,removedStop=false;
  if(removeStop){if(!/T(?:AA|AG|GA)$/.test(sequence))throw new Error('该 CDS 没有标准终止密码子，无法自动去除。');sequence=sequence.slice(0,-3);removedStop=true;}
  return {sequence,kind:'cds',removedStop};
 }
+export function withTranscript(record,info){
+ if(!info||info.status!=='available')return {...record,mrna:'',mrnaInfo:info||{status:'unavailable',reason:'not_loaded'}};
+ const {prefix,suffix,length,cdsLength,cdsStart,cdsEnd}=info;
+ if(typeof prefix!=='string'||typeof suffix!=='string'||!/^[ACGTRYSWKMBDHVN]*$/.test(prefix+suffix)||cdsLength!==record.cds.length||length!==prefix.length+cdsLength+suffix.length||cdsStart!==prefix.length+1||cdsEnd!==prefix.length+cdsLength)throw new Error('mRNA 注释与 CDS 不一致，暂不生成该转录本。');
+ return {...record,mrna:prefix+record.cds+suffix,mrnaInfo:info};
+}
+// Display context never changes the actual promoter alignment/primer template.
+export function sequenceDisplay(record,kind,length=2000,removeStop=false){
+ const t=cloningTemplate(record,kind,length,removeStop);
+ if(kind==='promoter')return {sequence:t.sequence+(record.cds||''),cdsStart:record.cds?t.sequence.length+1:null,cdsEnd:record.cds?t.sequence.length+record.cds.length:null,upstreamLength:t.sequence.length,contextOnly:true};
+ if(kind==='mrna')return {sequence:t.sequence,cdsStart:t.cdsStart,cdsEnd:t.cdsEnd,contextOnly:false};
+ return {sequence:t.sequence,cdsStart:1,cdsEnd:t.sequence.length,contextOnly:false};
+}
 // End-to-end Needleman–Wunsch. Exact canonical matches only; gaps and ambiguities stay in denominator.
 export function compareDNA(a,b){
  if(!/^[ACGTRYSWKMBDHVN]+$/.test(a)||!/^[ACGTRYSWKMBDHVN]+$/.test(b))throw new Error('比较序列为空或含非法字符。');
- if(a.length*b.length>36000000||Math.max(a.length,b.length)>12000)throw new Error('该 CDS 超过单次网页比较上限，请下载 FASTA 后使用专业软件比较。');
+ if(a.length*b.length>36000000||Math.max(a.length,b.length)>12000)throw new Error('该序列超过单次网页比较上限，请下载 FASTA 后使用专业软件比较。');
  const n=a.length,m=b.length,w=m+1,trace=new Uint8Array((n+1)*w);let prev=new Int32Array(w),cur=new Int32Array(w);
  for(let j=1;j<=m;j++){prev[j]=-2*j;trace[j]=2;}
  for(let i=1;i<=n;i++){

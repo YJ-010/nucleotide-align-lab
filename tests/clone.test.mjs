@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {promoterSequence,cloningTemplate,compareDNA,meltingTemp,complementarity,hairpinStem,designPrimers,bindingCheck,reverseComplement,shardFor} from '../clone-core.mjs';
+import {promoterSequence,cloningTemplate,compareDNA,meltingTemp,complementarity,hairpinStem,designPrimers,bindingCheck,reverseComplement,shardFor,withTranscript,sequenceDisplay,fastaText} from '../clone-core.mjs';
 test('upstream orientation, plus/minus coordinates, chromosome-edge clipping and 2kb limit',()=>{
  const seq='A'.repeat(1000)+'C'.repeat(1000),plus={upstream:seq,strand:'+',upstreamStart:101,upstreamEnd:2100},minus={...plus,strand:'-'};
  assert.deepEqual(promoterSequence(plus,1000),{sequence:'C'.repeat(1000),start:1101,end:2100,requested:1000,truncated:false});
@@ -35,4 +35,19 @@ test('binding reports mismatch counts, 3-prime differences, coordinates and ties
 test('manual inputs retain unknown coordinates and missing sequence errors',()=>{
  const p=promoterSequence({upstream:'ACGT'.repeat(200),strand:'+',upstreamStart:null,upstreamEnd:null},500);assert.equal(p.start,null);assert.equal(p.end,null);assert.equal(p.sequence.length,500);
  assert.throws(()=>cloningTemplate({cds:''},'cds'),/未提供/);assert.throws(()=>cloningTemplate({upstream:''},'promoter'),/未提供/);
+});
+test('mRNA reconstructs annotated ends and preserves coding stop without inventing unavailable transcripts',()=>{
+ const r={id:'GENE',transcript:'TX',version:'white',cds:'ATGGCTTAA'};
+ const info={status:'available',prefix:'AAA',suffix:'TTTT',length:16,cdsLength:9,cdsStart:4,cdsEnd:12};
+ const full=withTranscript(r,info);assert.equal(full.mrna,'AAAATGGCTTAATTTT');
+ assert.equal(cloningTemplate(full,'mrna',2000,true).sequence,full.mrna);assert.equal(sequenceDisplay(full,'mrna').cdsStart,4);assert.equal(sequenceDisplay(full,'mrna').cdsEnd,12);
+ assert.match(fastaText([full],'mrna'),/mrna\nAAAATGGCTTAATTTT/);
+ assert.throws(()=>withTranscript(r,{...info,cdsStart:5}),/不一致/);
+ const absent=withTranscript(r,{status:'unavailable',reason:'no_exon_or_utr'});assert.equal(absent.mrna,'');assert.throws(()=>cloningTemplate(absent,'mrna'),/暂无/);
+});
+test('upstream plus red-CDS context uses exact boundary without changing promoter template or exported FASTA',()=>{
+ const r={id:'GENE',transcript:'TX',version:'white',upstream:'A'.repeat(2000),cds:'ATGGCTTAA',strand:'-',upstreamStart:11,upstreamEnd:2010};
+ const view=sequenceDisplay(r,'promoter',1500);assert.equal(view.sequence,'A'.repeat(1500)+'ATGGCTTAA');assert.equal(view.cdsStart,1501);assert.equal(view.cdsEnd,1509);assert.equal(view.contextOnly,true);
+ assert.equal(cloningTemplate(r,'promoter',1500).sequence.length,1500);assert.ok(!fastaText([r],'promoter',1500).includes('ATG'));
+ const short=sequenceDisplay({...r,upstream:'A'.repeat(70)},'promoter',2000);assert.equal(short.cdsStart,71);assert.equal(short.cdsEnd,79);
 });

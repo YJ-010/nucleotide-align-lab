@@ -52,9 +52,9 @@ GitHub Pages：Settings → Pages → Deploy from a branch → main → /(root)�
 
 ## 猕猴桃跨版本克隆工作区（2026-10-19）
 
-**四个公开参考版本已接入：可按基因或转录本编号查询，共 156,256 个有效基因。** 自动查找其他版本中的同源候选，比较 CDS / 上游区，选择模板并生成候选克隆引物。手动序列入口默认折叠，需要时可展开使用。
+**四个公开参考版本已接入：可按基因或转录本编号查询，共 156,256 个有效基因。** 自动查找其他版本中的同源候选，比较 CDS / mRNA / 上游区，选择模板并生成候选克隆引物。手动序列入口默认折叠，需要时可展开使用。
 
-入口：[`#clone`](https://yj-010.github.io/nucleotide-align-lab/?v=20261019-clone3#clone)。输入基因或转录本编号 → 查看四个版本的同源候选 → 比较 CDS 或上游区 → 选模板 → 生成并导出引物。可将模板直接送入测序比对工作区。
+入口：[`#clone`](https://yj-010.github.io/nucleotide-align-lab/?v=20261019-clone4#clone)。输入基因或转录本编号 → 查看四个版本的同源候选 → 比较 CDS、mRNA 或上游区 → 选模板 → 生成并导出引物。可将模板直接送入测序比对工作区。
 
 本次仅公开这四个参考版本派生的 CDS、最多 2000 bp 上游序列、编号及同源索引。范围、来源和质量校验见 [REFERENCE_RELEASE.md](REFERENCE_RELEASE.md)。
 
@@ -85,3 +85,18 @@ GitHub Pages：Settings → Pages → Deploy from a branch → main → /(root)�
 `node --test tests/*.test.mjs` 包含原有测序功能及新的克隆坐标、长度限制、对齐分母、独立 Tm 对照、互补方向、引物端点和导出相关核心验证。另执行 DOM 流程测试（真实参考样本注入、四版本比较、模板切换、引物设计及送回测序比对），另在发布后检查实际线上索引、分片加载和完整查询流程。全库服务器校验覆盖索引、分片、序列边界和 923,735 条同源候选关联，无悬空关联。当前环境未完成真实浏览器视觉与手机实机检查。
 
 手动输入区仅接受每格一条 FASTA 或纯 DNA：CDS 60–12,000 bp，上游区 60–2000 bp。没有坐标时显示“未核对”，不生成虚构染色体位置；支持单条设计引物、两至四个版本比较，编辑后清除旧结果。
+
+
+## mRNA 与红色 CDS 显示（2026-10-19 更新）
+
+- 比较对象新增 **mRNA / cDNA**，按转录方向拼接外显子，保留已有的 UTR 注释，使用 T 字母；不添加 poly(A) 尾或推测未注释的转录本末端。支持比较、模板 FASTA、测序参照传递和候选引物。
+- 启动子查看区显示“所选上游区＋拼接 CDS”，CDS 标红并注明起止位置。两段拼接用于对照，不代表基因组连续片段。上游比较、引物及模板 FASTA 仍只取所选的 ≤2000 bp 上游区。
+- 可下载独立的标注 HTML，保留红色 CDS、范围及说明；FASTA 不保存字体颜色。mRNA 查看区也标红已核定的 CDS，手动输入时只有 CDS 在 mRNA 中唯一精确匹配才标注位置。
+
+可核对的剪接转录本共 **100,444 条**：Hong Yang v3 update 40,466 条，Red5 33,115 条，White v1.0 26,863 条。Hong Yang v2 的本批 GFF 只有 CDS，没有 exon / UTR，未用 CDS 冒充完整 mRNA；White 另有 16,122 个模型同样缺少 exon / UTR，暂不可用。HYv3 有 19,523 条、Red5 有 4 条已有外显子注释但没有两端 UTR，其拼接序列与 CDS 相同，页面逐条提示注释边界限制。缺少 UTR 不代表生物学上没有 UTR。
+
+补充数据位于 `data/kiwi-20261019/mrna-v1/`：32 个 gzip 文件，约 21.7 MB。保存经坐标核对的 5′ / 3′非 CDS 片段、外显子坐标、CDS 在转录本内的位置及注释提示；与既有同一版本 CDS 重建 mRNA，避免重复下载 CDS。每条可用记录均已验证其转录本 CDS 区间与已发布 CDS 完全相同；原 FASTA / GFF 的 SHA-256 与前一版参考库一致。
+
+重建：`python3 scripts/build_transcripts.py config.json CDS_DATA_DIR OUTPUT_DIR`。验证：`python3 tests/transcripts_test.py`；覆盖正负链、去内含子、CDS＋UTR 注释、非零 phase 和异常模型拒绝；网页核心测试覆盖 mRNA 边界及“追加显示 CDS 不改变启动子模板”。
+
+格式依据：[NCBI GFF 注释规范](https://www.ncbi.nlm.nih.gov/genbank/genomes_gff/)允许用外显子，或 CDS＋five_prime_UTR＋three_prime_UTR 表达多外显子 mRNA。没有用转录本的整段基因组跨度作为成熟 mRNA。
