@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#102925">
-  <meta name="description" content="免费、免登录的核苷酸序列比对工具。支持 FASTA、GenBank/ApE 文本与 CLUSTAL 输入，显示 DNAMAN 风格的分段比对结果。">
+  <meta name="description" content="免费、免登录的核苷酸序列比对工具。直接导入 Sanger AB1、SEQ、FASTA、FASTQ，查看峰图、质量和测序片段比对；支持 GenBank/ApE 与 CLUSTAL。">
   <title>核苷酸序列比对 · SeqLab</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20261019-sanger1">
 </head>
 <body>
   <header class="site-header">
@@ -26,9 +26,9 @@
     <section class="intro shell">
       <div class="eyebrow"><span class="eyebrow-line"></span> SEQUENCE ALIGNMENT STUDIO <span class="eyebrow-line"></span></div>
       <h1>把序列放进来，<em>差异一眼看清。</em></h1>
-      <p>面向日常基因片段分析的轻量比对工具。粘贴或上传序列，一键查看位点差异，并带走可复用的比对文件。</p>
+      <p>测序公司返回的 AB1、SEQ 文件可直接拖入。选择目标参照，查看读段位置、测序质量和位点差异，再导出比对结果。</p>
       <div class="intro-pills" aria-label="主要特性">
-        <span>FASTA / GenBank / CLUSTAL</span>
+        <span>新增 AB1 峰图 / SEQ / FASTQ</span>
         <span>2–8 条 DNA 序列</span>
         <span>免登录 · 免费使用</span>
       </div>
@@ -40,25 +40,35 @@
           <div><span class="section-number">01 / INPUT</span><h2>输入序列</h2></div>
           <button class="text-button" id="example-button" type="button">载入示例 <span aria-hidden="true">↗</span></button>
         </div>
-        <p class="field-hint">第一条自动设为参照；每条 FASTA 用 <code>&gt;序列名称</code> 开头。</p>
+        <p class="field-hint">先粘贴或上传目标参照，再上传测序结果。第一条为参照，也可在文件卡片中点击“设为参照”。</p>
         <label class="sr-only" for="sequence-input">粘贴 FASTA、GenBank、CLUSTAL 或纯 DNA 序列</label>
         <textarea id="sequence-input" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder=">参照序列&#10;ATGCCGTAACCTGACGTTACG...&#10;>待比对序列&#10;ATGCCGTAACCTAACGTTACG..."></textarea>
         <div id="drop-zone" class="drop-zone">
           <div class="drop-icon" aria-hidden="true">↥</div>
-          <div><strong>拖入序列文件</strong><span>或点击选择；可一次上传多个文件</span></div>
+          <div><strong>拖入参照或测序结果</strong><span>支持 AB1 / SEQ；可选择多个文件</span></div>
           <button id="upload-button" class="upload-button" type="button">选择文件</button>
-          <input id="file-input" type="file" multiple accept=".fa,.fas,.fasta,.fna,.txt,.ape,.gb,.gbk,.genbank,.aln,.seq,text/plain" hidden>
+          <input id="file-input" type="file" multiple accept=".ab1,.abi,.seq,.fastq,.fq,.fa,.fas,.fasta,.fna,.txt,.ape,.gb,.gbk,.genbank,.aln,text/plain" hidden>
         </div>
-        <div class="format-note">支持 FASTA、GenBank / ApE 文本（.ape、.gb）、CLUSTAL 和纯序列。文件会转成可编辑的 FASTA 文本。</div>
+        <div class="format-note">AB1 自动提取已判读序列；SEQ / TXT、FASTA、FASTQ（Phred+33）、GenBank / ApE、CLUSTAL 均可导入。压缩包请先解压；同一样本只选 AB1 或 SEQ 中的一份。</div>
+        <div id="read-list" class="read-list" aria-live="polite"></div>
         <div class="settings">
+          <label class="mode-label" for="alignment-mode">比对方式</label>
+          <select id="alignment-mode" class="mode-select">
+            <option value="fitting">测序片段定位 · 对照完整参照</option>
+            <option value="global">全长比对 · 比较完整序列</option>
+          </select>
+          <p id="mode-note" class="mode-note">适合 Sanger 短读段：参照中未测到的两端不计作缺失；内部缺口仍会显示。</p>
           <label class="checkbox-line"><input type="checkbox" id="auto-orient" checked><span class="custom-check" aria-hidden="true"></span><span><strong>自动识别反向互补</strong><small>逐条选择与参照得分更高的方向</small></span></label>
+          <label class="checkbox-line trim-line"><input type="checkbox" id="trim-quality"><span class="custom-check" aria-hidden="true"></span><span><strong>修剪测序读段的低质量两端</strong><small>从首个到末个连续 10 个 Q≥20 的明确碱基区间保留；不裁剪参照，不删除中间碱基。仅对有质量值的记录生效。</small></span></label>
+          <p class="mode-note">原始序列保留在输入框，修剪仅用于本次比对。</p>
+          <button id="sanger-example-button" class="text-button" type="button">试试测序片段示例（模拟） ↗</button>
         </div>
         <div class="input-footer">
           <button id="align-button" class="primary-button" type="button"><span>开始比对</span><span aria-hidden="true">→</span></button>
           <button id="clear-button" class="clear-button" type="button">清空</button>
         </div>
         <div id="status" class="status" role="status" aria-live="polite"></div>
-        <p class="limits">适合常见基因片段：单条 ≤ 3,000 nt，最多 8 条。比对采用全局算法（匹配 +2 / 模糊兼容 0 / 不匹配 −1 / 缺口 −2）。</p>
+        <p class="limits">最多 8 条序列。测序片段模式：参照 ≤ 12,000 nt，读段 ≤ 3,000 nt；全长模式：每条 ≤ 3,000 nt。总计算量仍受浏览器限制，较长参照请分批比对。</p>
       </div>
 
       <div id="result-panel" class="result-panel panel">
@@ -95,6 +105,7 @@
             </div>
           </div>
           <div id="sequence-key" class="sequence-key"></div>
+          <div id="coverage-summary" class="coverage-summary"></div>
           <div class="alignment-head"><span>ALIGNMENT VIEW</span><span id="column-count"></span></div>
           <div class="alignment-scroll" tabindex="0" aria-label="比对序列，可横向滚动">
             <div id="alignment-view" class="alignment-view"></div>
@@ -103,6 +114,7 @@
             <span><i class="legend-dot match-dot"></i>相同</span>
             <span><i class="legend-dot substitution-dot"></i>替换 / 模糊</span>
             <span><i class="legend-dot gap-dot"></i>插入 / 缺失</span>
+            <span><i class="legend-dot uncovered-dot"></i>参照两端未覆盖</span>
             <span>坐标按当前显示方向计算</span>
           </div>
           <div class="difference-head">
@@ -114,17 +126,32 @@
       </div>
     </section>
 
+    <section id="trace-panel" class="trace-panel shell panel" hidden aria-label="Sanger 测序峰图预览">
+      <div class="panel-heading">
+        <div><span class="section-number">SANGER TRACE</span><h2 id="trace-title">原始峰图预览</h2></div>
+        <button id="close-trace" class="small-action" type="button">收起峰图</button>
+      </div>
+      <p id="trace-note" class="field-hint"></p>
+      <div class="trace-controls">
+        <button id="trace-previous" class="small-action" type="button">← 上一段</button>
+        <span id="trace-range"></span>
+        <button id="trace-next" class="small-action" type="button">下一段 →</button>
+      </div>
+      <div class="trace-scroll" tabindex="0" aria-label="峰图，可横向滚动"><svg id="trace-svg" role="img" aria-label="四通道测序峰图"></svg></div>
+      <p class="trace-legend"><span class="trace-a">A</span><span class="trace-c">C</span><span class="trace-g">G</span><span class="trace-t">T</span> · 浅红色标记 Q&lt;20 · 峰图按文件原始方向显示 · 疑似双峰请结合原始报告复核</p>
+    </section>
+
     <section id="help" class="help-section shell">
       <div class="help-title"><span class="section-number">GOOD TO KNOW</span><h2>使用说明</h2></div>
       <div class="help-grid">
-        <article><span class="help-index">01</span><h3>文件与粘贴</h3><p>支持常见 FASTA、GenBank（包括 ApE 保存的文本式 .ape/.gb）和 CLUSTAL 文件。ApE 的二进制或特殊扩展内容可能需要先导出 FASTA。</p></article>
-        <article><span class="help-index">02</span><h3>如何读结果</h3><p>以第一条为参照，分段显示序列、位置与严格共识。差异包含替换和插入/缺失；一致率仅按双方都有碱基的 A/C/G/T 完全相同位点计算。</p></article>
-        <article><span class="help-index">03</span><h3>导出与隐私</h3><p>可导出通用对齐 FASTA、CLUSTAL 或纯文本，方便继续在 ApE、DNAMAN 等工具中使用。计算发生在本机浏览器，网页不会上传序列。</p></article>
+        <article><span class="help-index">01</span><h3>测序回来直接比</h3><p>导入目标参照，再导入测序公司返回的 .ab1、.seq 或 FASTA 文件。AB1 可查看质量和峰图；没有质量值的文本不会伪造质量。也支持少量 Phred+33 FASTQ，不用于批量高通量测序分析。</p></article>
+        <article><span class="help-index">02</span><h3>关注覆盖区间</h3><p>测序片段模式将完整读段定位到参照上，未覆盖的两端不算缺失；不是双向拼接或基因鉴定。第一条为参照；一致率按双方均有碱基的位点为分母，仅 A/C/G/T 完全相同计为一致。高一致率仍需结合覆盖长度和质量判断。</p></article>
+        <article><span class="help-index">03</span><h3>保留原始结果</h3><p>修剪可选，原始序列不会被覆盖。手动修改序列或名称后，该条记录不再沿用原始质量和峰图；重新上传可恢复。支持导出对齐 FASTA、CLUSTAL 和含覆盖区间的文本报告。全程在本机浏览器计算。</p></article>
       </div>
-      <p class="method-note">本工具提供轻量全局比对，多个序列以第一条为中心逐步合并。复杂长片段、结构变异和发表级分析请再用专业软件复核；本网站不生成 DNAMAN 专有工程文件。</p>
+      <p class="method-note">本工具提供全局比对与测序片段定位（参照两端不罚分），多个序列以第一条为中心合并。匹配 +2、模糊兼容 0、不匹配 −1、缺口 −2。保留 IUPAC 模糊碱基，不自动判定杂合突变。复杂长片段、结构变异和发表级分析请用专业软件复核；不生成 DNAMAN 专有工程文件。</p>
     </section>
   </main>
   <footer class="footer"><div class="shell"><span class="footer-brand">SeqLab <span>核苷酸比对</span></span><span>为快速查看序列差异而设计 · 免费公开使用</span></div></footer>
-  <script type="module" src="./app.mjs"></script>
+  <script type="module" src="./app.mjs?v=20261019-sanger1"></script>
 </body>
 </html>

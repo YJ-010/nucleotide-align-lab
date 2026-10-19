@@ -86,19 +86,20 @@ export function reverseComplement(sequence) {
   return [...sequence].reverse().map(base => COMPLEMENT[base] || "N").join("");
 }
 
-function pairwise(reference, query) {
+function pairwise(reference, query, fitting = false) {
   const n = reference.length, m = query.length;
   const stride = m + 1;
   const trace = new Uint8Array((n + 1) * stride);
   let previous = new Int32Array(stride);
   let current = new Int32Array(stride);
   for (let j = 1; j <= m; j++) { previous[j] = -2 * j; trace[j] = 2; }
+  let bestEnd = 0, bestEndScore = previous[m];
   for (let i = 1; i <= n; i++) {
-    current[0] = -2 * i;
+    current[0] = fitting ? 0 : -2 * i;
     trace[i * stride] = 1;
     for (let j = 1; j <= m; j++) {
       const a = reference[i - 1], b = query[j - 1];
-      const pairScore = a === b ? 2 : (MASK[a] & MASK[b]) ? 0 : -1;
+      const pairScore = a === b && /[ACGT]/.test(a) ? 2 : (MASK[a] & MASK[b]) ? 0 : -1;
       const diagonal = previous[j - 1] + pairScore;
       const up = previous[j] - 2;
       const left = current[j - 1] - 2;
@@ -108,11 +109,17 @@ function pairwise(reference, query) {
       current[j] = best;
       trace[i * stride + j] = direction;
     }
+    if (fitting && current[m] > bestEndScore) { bestEndScore = current[m]; bestEnd = i; }
     [previous, current] = [current, previous];
   }
-  const score = previous[m], ref = [], target = [];
-  let i = n, j = m;
+  const score = fitting ? bestEndScore : previous[m], ref = [], target = [];
+  let i = fitting ? bestEnd : n, j = m;
+  for (let k = n - 1; k >= i; k--) { ref.push(reference[k]); target.push("-"); }
   while (i || j) {
+    if (fitting && !j) {
+      while (i) { ref.push(reference[--i]); target.push("-"); }
+      break;
+    }
     const direction = trace[i * stride + j];
     if (direction === 0) { ref.push(reference[--i]); target.push(query[--j]); }
     else if (direction === 1) { ref.push(reference[--i]); target.push("-"); }
@@ -147,7 +154,7 @@ function mergeAlignment(rows, incoming) {
   return [...builders.map(parts => parts.join("")), appended.join("")];
 }
 
-function summarize(rows, records, orientations) {
+function summarize(rows, records, orientations, mode) {
   const length = rows[0].length;
   const consensus = [];
   const allMatch = [];
@@ -157,14 +164,21 @@ function summarize(rows, records, orientations) {
     consensus.push(exact ? column[0] : "·");
     allMatch.push(exact && /[ACGT]/.test(column[0]) ? "*" : " ");
   }
+  const coverageBounds = rows.map(row => ({ first: row.search(/[^-]/), last: row.search(/[^-]-*$/) }));
   const stats = rows.slice(1).map((row, index) => {
     let matches = 0, substitutions = 0, gaps = 0, compared = 0, ambiguous = 0;
     const variants = [];
-    let refPosition = 0, queryPosition = 0;
+    let refPosition = 0, queryPosition = 0, refStart = null, refEnd = null, coveredReference = 0, uncovered = 0;
     for (let i = 0; i < length; i++) {
       const a = rows[0][i], b = row[i];
       if (a !== "-") refPosition++;
       if (b !== "-") queryPosition++;
+      if (a === "-" && b === "-") continue;
+      if (mode === "fitting" && (i < coverageBounds[index + 1].first || i > coverageBounds[index + 1].last)) {
+        if (a !== "-") uncovered++;
+        continue;
+      }
+      if (a !== "-") { refStart ??= refPosition; refEnd = refPosition; coveredReference++; }
       if (a === "-" || b === "-") {
         gaps++;
         if (variants.length < 80) variants.push({ position: a === "-" ? `${refPosition} 后` : String(refPosition),
@@ -182,17 +196,21 @@ function summarize(rows, records, orientations) {
     }
     return {
       name: records[index + 1].name, orientation: orientations[index + 1],
+      refStart, refEnd, coveredReference, uncovered,
+      coverage: 100 * coveredReference / records[0].sequence.length,
       matches, substitutions, gaps, ambiguous, compared,
       identity: compared ? matches / compared * 100 : 0, variants
     };
   });
-  return { length, consensus: consensus.join(""), allMatch: allMatch.join(""), stats };
+  return { length, consensus: consensus.join(""), allMatch: allMatch.join(""), stats, coverageBounds };
 }
 
-export async function alignSequences(records, autoOrient = true, progress = () => {}) {
+export async function alignSequences(records, autoOrient = true, progress = () => {}, options = {}) {
+  const mode = options.mode === "fitting" ? "fitting" : "global";
   if (records.length < 2 || records.length > 8) throw new Error("请提供 2–8 条序列。");
-  if (records.some(record => record.sequence.length > 3000))
-    throw new Error("单条序列上限为 3,000 nt。长序列建议使用专业桌面软件。");
+  const referenceLimit = mode === "fitting" ? 12000 : 3000;
+  if (records[0].sequence.length > referenceLimit || records.slice(1).some(record => record.sequence.length > 3000))
+    throw new Error(mode === "fitting" ? "测序片段模式支持参照 ≤ 12,000 nt，读段 ≤ 3,000 nt。" : "单条序列上限为 3,000 nt；较长参照可选择测序片段模式。");
   const work = records[0].sequence.length * records.slice(1).reduce((sum, r) => sum + r.sequence.length, 0);
   if (work > 18_000_000) throw new Error("本次序列组合过大，请缩短序列或分批比对（计算量上限约 1,800 万格）。");
   let rows = [records[0].sequence];
@@ -200,16 +218,16 @@ export async function alignSequences(records, autoOrient = true, progress = () =
   for (let i = 1; i < records.length; i++) {
     progress(i, records.length - 1);
     await new Promise(resolve => setTimeout(resolve, 0)); // let progress paint on small screens
-    const forward = pairwise(records[0].sequence, records[i].sequence);
+    const forward = pairwise(records[0].sequence, records[i].sequence, mode === "fitting");
     let choice = forward, orientation = "正向";
     if (autoOrient) {
-      const reverse = pairwise(records[0].sequence, reverseComplement(records[i].sequence));
+      const reverse = pairwise(records[0].sequence, reverseComplement(records[i].sequence), mode === "fitting");
       if (reverse.score > forward.score) { choice = reverse; orientation = "反向互补"; }
     }
     rows = mergeAlignment(rows, choice);
     orientations.push(orientation);
   }
-  return { records, rows, orientations, ...summarize(rows, records, orientations) };
+  return { records, rows, orientations, mode, ...summarize(rows, records, orientations, mode) };
 }
 
 function safeFastaName(name) { return name.replace(/[\r\n>]/g, " ").trim(); }
@@ -231,22 +249,23 @@ export function toClustal(result) {
 }
 export function toText(result) {
   const lines = [
-    "核苷酸序列比对  |  全局比对（第一条序列为参照）",
+    `核苷酸序列比对  |  ${result.mode === "fitting" ? "测序片段定位（参照两端未覆盖部分不计缺失）" : "全局比对"}（第一条序列为参照）`,
     "得分：匹配 +2，模糊兼容 0，不匹配 -1，缺口 -2",
     "一致率 = 完全相同的 A/C/G/T 位点 ÷ 双方均有碱基的位点",
-    ...result.records.map((record, i) => `Seq${i + 1} = ${record.name} (${record.sequence.length} nt, ${result.orientations[i]})`),
+    ...result.records.map((record, i) => `Seq${i + 1} = ${record.name} (${record.sequence.length} nt, ${result.orientations[i]}${record.trimNote ? ", " + record.trimNote : ""})`),
     "", ...result.stats.map((stat, i) =>
-      `Seq${i + 2} / Seq1: 一致率 ${stat.identity.toFixed(1)}% · 完全相同 ${stat.matches} · 替换 ${stat.substitutions} · 缺口列 ${stat.gaps} · 模糊位点 ${stat.ambiguous}`), ""
+      `Seq${i + 2} / Seq1: 一致率 ${stat.identity.toFixed(1)}% · 完全相同 ${stat.matches} · 替换 ${stat.substitutions} · 缺口列 ${stat.gaps} · 模糊位点 ${stat.ambiguous}${result.mode === "fitting" ? ` · 参照覆盖 ${stat.refStart ?? "—"}–${stat.refEnd ?? "—"} nt（${stat.coverage.toFixed(1)}%） · 未覆盖 ${stat.uncovered} nt` : ""}`), ""
   ];
   const coords = result.rows.map(() => 0);
   for (let at = 0; at < result.length; at += 60) {
     const end = Math.min(result.length, at + 60);
     lines.push(`列 ${at + 1}–${end}`);
     result.rows.forEach((row, i) => {
-      const start = coords[i] + 1;
       const fragment = row.slice(at, end);
-      coords[i] += fragment.replace(/-/g, "").length;
-      lines.push(`Seq${i + 1}`.padEnd(7) + String(start).padStart(5) + "  " + fragment + "  " + String(coords[i]));
+      const bases = fragment.replace(/-/g, "").length;
+      const start = bases ? coords[i] + 1 : "·";
+      coords[i] += bases;
+      lines.push(`Seq${i + 1}`.padEnd(7) + String(start).padStart(5) + "  " + fragment + "  " + (bases ? String(coords[i]) : "·"));
     });
     lines.push("共识".padEnd(7) + "       " + result.consensus.slice(at, end), "");
   }
