@@ -223,3 +223,74 @@ button:disabled{opacity:.5;cursor:default}
 .manual-panel>summary{cursor:pointer;color:#2f5c3c;font-size:14px;font-weight:600;line-height:1.7}.manual-content{padding-top:24px}.manual-panel>summary:focus-visible{outline:2px solid #497d5b;outline-offset:6px;border-radius:3px}
 .sequence-legend{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.sequence-legend span{padding:6px 10px;border:1px solid #cdd9d0;border-radius:6px;background:#fff;font-size:12px}.cds-red{color:#b42318!important;font-weight:700}.sequence-legend .cds-red{border-color:#e6b4ad;background:#fff4f2}.sequence-view-note{color:#4d6253;font-size:12px!important;line-height:1.8}.template-area pre .cds-red{background:#fff1ed}.transcript-note{font-size:11px!important;color:#5a6b60!important}
 @media print{.cds-red{color:#b42318!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+
+/* Kiwifruit editorial visuals and scientific schematics. */
+body{background:radial-gradient(circle at 8% 5%,#e8f2e2 0,transparent 30%),#f4f7f2}
+.site-header{background:#0d2921;border-bottom-color:#284b37}
+.nav-row{min-height:77px}
+.brand-mark{width:33px;height:33px;padding:5px;border:1px solid #86b48170;border-radius:9px;background:#b6dc9f15}
+.workspace-nav{margin-top:22px;padding:7px;gap:7px;background:#fff;border:1px solid #dbe7da;border-radius:17px;box-shadow:0 10px 25px #214b2a0c}
+.workspace-tab{max-width:none;border:0;border-radius:11px;padding:13px 19px;transition:background-color .15s ease,color .15s ease}
+.workspace-tab:hover{background:#f2f8ee;color:#28583e}
+.workspace-tab.active{border:0;border-radius:11px;background:#eaf4e4;color:#184d32;box-shadow:inset 0 0 0 1px #d4e8cb}
+.visual-intro{position:relative;overflow:hidden;isolation:isolate;min-height:325px;margin-top:22px;margin-bottom:28px;padding:46px 55px 42px;background:#0c2b23;color:#f6fbf1;border:1px solid #31583c;border-radius:25px;box-shadow:0 22px 45px #17382422}
+.visual-intro::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,#0c2b23 0%,#0c2b23f4 28%,#0c2b23bb 54%,#0c2b230a 88%)}
+.visual-intro .intro-copy{position:relative;z-index:2;max-width:690px}
+.visual-intro .hero-media{position:absolute;inset:0 0 0 auto;width:69%;z-index:0}
+.visual-intro .hero-media img{display:block;width:100%;height:100%;object-fit:cover;object-position:right center}
+.clone-intro .hero-media{width:53%}
+.clone-intro .hero-media img{object-position:center center}
+.visual-intro .eyebrow{color:#d0e8b9}
+.visual-intro .eyebrow-line{background:#a5c98a}
+.visual-intro h1{max-width:675px;margin:17px 0 13px;color:#fff;line-height:1.18;text-wrap:balance}
+.visual-intro h1 em{color:#c0ea96}
+.visual-intro p{max-width:590px;color:#e3efdf;font-size:15px;line-height:1.85}
+.visual-intro .intro-pills{margin-top:24px;max-width:630px}
+.visual-intro .intro-pills span{background:#e7f4db17;border:1px solid #c8e8ad55;color:#eff9e7;backdrop-filter:blur(5px)}
+.clone-intro{min-height:319px;padding-top:45px;padding-bottom:42px}
+.clone-intro h1{font-size:clamp(29px,3.5vw,46px);max-width:585px}
+.panel{border-color:#dce8d9;border-radius:17px;box-shadow:0 15px 36px #193b2510}
+.clone-start{grid-template-columns:minmax(0,1fr) 292px;gap:18px}
+.clone-guide{display:flex;flex-direction:column;padding:23px;background:linear-gradient(155deg,#eff7ea,#e2eedb);border-color:#d7e6d0;border-radius:17px}
+.clone-guide h3{margin:8px 0 10px}
+.clone-guide .section-number{color:#54765b}
+.gene-figure{margin:3px 0 8px}
+.gene-figure img{display:block;width:100%;height:auto;border:1px solid #d4e3ce;border-radius:11px;background:#f8fbf4}
+.gene-figure figcaption,.sequence-map figcaption{font-size:11px;line-height:1.6;color:#667c6a;margin-top:7px}
+.clone-guide ol{margin:7px 0 8px;padding-left:22px;line-height:1.9;font-size:12px}
+.clone-guide li::marker{color:#518a59;font-weight:700}
+.clone-guide p{margin:0}
+.sequence-map{margin:1px 0 20px;padding:11px;border:1px solid #dce8d8;border-radius:13px;background:#f8fbf6}
+.sequence-map picture,.sequence-map img{display:block;width:100%;height:auto}
+.sequence-map img{border-radius:9px}
+.sequence-map figcaption{margin:8px 5px 2px}
+.help-grid article{background:linear-gradient(145deg,#edf5e9,#e6f1e1);border-radius:13px}
+.footer small{font-size:10px;color:#a4bbaa}
+@media(max-width:900px){
+  .clone-start{grid-template-columns:1fr}
+  .clone-guide{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);column-gap:18px;align-items:start}
+  .clone-guide .section-number,.clone-guide h3,.clone-guide p{grid-column:1 / -1}
+  .clone-guide .gene-figure{grid-column:1;margin-top:5px}
+  .clone-guide ol{grid-column:2;margin-top:5px}
+  .visual-intro .hero-media{width:76%}
+  .clone-intro .hero-media{width:65%}
+}
+@media(max-width:640px){
+  .nav-row{min-height:62px}
+  .workspace-nav{margin-top:12px;padding:5px;gap:4px;border-radius:13px}
+  .workspace-tab{padding:10px 9px;border-radius:8px;line-height:1.3}
+  .workspace-tab.active{border-radius:8px}
+  .visual-intro{min-height:336px;margin-top:13px;margin-bottom:18px;padding:31px 23px 28px;border-radius:19px}
+  .visual-intro::after{background:linear-gradient(90deg,#0c2b23ed 0%,#0c2b23dd 54%,#0c2b237a 100%),linear-gradient(0deg,#0c2b23ca,transparent 70%)}
+  .visual-intro .hero-media,.clone-intro .hero-media{width:100%;opacity:.63}
+  .visual-intro .intro-copy{max-width:100%}
+  .visual-intro h1,.clone-intro h1{font-size:clamp(30px,8vw,39px);line-height:1.22;margin:16px 0 13px}
+  .visual-intro p{font-size:12px;line-height:1.7}
+  .visual-intro .eyebrow{font-size:9px;letter-spacing:.15em}
+  .visual-intro .intro-pills{gap:6px;margin-top:18px}
+  .visual-intro .intro-pills span{font-size:10px;padding:5px 8px}
+  .clone-guide{display:block;padding:19px}
+  .clone-guide .gene-figure{max-width:360px;margin:7px 0}
+  .clone-guide ol{margin:8px 0 10px}
+  .sequence-map{padding:7px;margin-bottom:16px}
+}

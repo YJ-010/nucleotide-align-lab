@@ -36,7 +36,7 @@
 
 ## 开发与发布
 
-根目录为静态网站：index.html、styles.css、app.mjs、align-core.mjs、sequencing.mjs 和 .nojekyll，无需构建或外部脚本 CDN。
+根目录为静态网站：index.html、styles.css、app.mjs、align-core.mjs、sequencing.mjs 和 .nojekyll，无需构建或外部脚本 CDN。`assets/` 的两张猕猴桃图片为生成的主题视觉插图，并非实验材料照片；基因结构 SVG 是通用方法示意，不表示任何特定基因或真实位点。所有配图在仓库内，网页不依赖第三方图片地址。
 
 使用 Node.js 22+ 验证核心逻辑：
 

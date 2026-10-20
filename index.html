@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#102925">
   <meta name="description" content="免费、免登录的序列研究工作台。支持 AB1 测序比对、猕猴桃四参考版本同源基因查询、CDS 与 2 kb 上游区比较及克隆引物初筛。">
   <title>SeqLab · 序列比对与猕猴桃克隆设计</title>
-  <link rel="stylesheet" href="./styles.css?v=20261019-clone4">
+  <link rel="stylesheet" href="./styles.css?v=20261020-visual1">
 </head>
 <body>
   <header class="site-header">
@@ -28,7 +28,8 @@
   </nav>
   <main id="top">
   <div id="sequence-workspace" role="tabpanel" aria-labelledby="sequence-tab">
-    <section class="intro shell">
+    <section class="intro shell visual-intro seq-intro">
+      <div class="intro-copy">
       <div class="eyebrow"><span class="eyebrow-line"></span> SEQUENCE ALIGNMENT STUDIO <span class="eyebrow-line"></span></div>
       <h1>把序列放进来，<em>差异一眼看清。</em></h1>
       <p>测序公司返回的 AB1、SEQ 文件可直接拖入。选择目标参照，查看读段位置、测序质量和位点差异，再导出比对结果。</p>
@@ -37,6 +38,8 @@
         <span>2–8 条 DNA 序列</span>
         <span>免登录 · 免费使用</span>
       </div>
+      </div>
+      <div class="hero-media"><img src="./assets/kiwi-hero.webp" alt="猕猴桃果实剖面与叶片的主题视觉插图" width="1600" height="600" fetchpriority="high"></div>
     </section>
 
     <section class="workspace shell" aria-label="序列比对工作区">
@@ -157,11 +160,14 @@
     </section>
   </div>
   <div id="clone-workspace" role="tabpanel" aria-labelledby="clone-tab" hidden>
-    <section class="intro shell clone-intro">
+    <section class="intro shell visual-intro clone-intro">
+      <div class="intro-copy">
       <div class="eyebrow">KIWIFRUIT · FROM GENE ID TO CLONING</div>
       <h1>从一个基因编号，<em>找到合适的克隆序列。</em></h1>
       <p>查询四个参考版本的同源候选，分别比较 CDS、mRNA 和上游区，再为选定模板生成克隆引物。</p>
       <div class="intro-pills"><span>Hong Yang v2</span><span>Hong Yang v3 update</span><span>Red5</span><span>White v1.0</span></div>
+      </div>
+      <div class="hero-media"><img src="./assets/kiwi-vine.webp" alt="猕猴桃藤蔓、叶片与果实的主题视觉插图" width="1536" height="1024" loading="lazy"></div>
     </section>
     <section class="shell clone-start">
       <div class="panel clone-query">
@@ -174,7 +180,7 @@
         <p class="field-hint">支持 Ach…、Actinidia…、Acc…、DTZ79_… 编号。一个版本显示最多 3 个蛋白同源候选，可手动切换；基因编号默认取最长 CDS 转录本。</p>
         <div id="gene-status" class="status" role="status" aria-live="polite">正在读取参考数据目录…</div>
       </div>
-      <aside class="clone-guide"><span class="section-number">YOUR WORKFLOW</span><h3>先比较，再定模板</h3><ol><li>核对四个版本的候选基因</li><li>查看 CDS / mRNA / 上游区相似度</li><li>选与实验材料相符的版本</li><li>生成并导出克隆引物</li></ol><p>“上游 2000”按 <strong>2000 bp（2 kb）</strong>计算。</p></aside>
+      <aside class="clone-guide"><span class="section-number">YOUR WORKFLOW</span><h3>先比较，再定模板</h3><figure class="gene-figure"><img src="./assets/gene-workflow.svg" alt="基因组 DNA 的外显子和内含子、剪接后的 mRNA 及其中 CDS 的结构示意" width="620" height="360" loading="lazy"><figcaption>基因结构示意，不对应具体基因。</figcaption></figure><ol><li>核对四个版本的候选基因</li><li>查看 CDS / mRNA / 上游区相似度</li><li>选与实验材料相符的版本</li><li>生成并导出克隆引物</li></ol><p>“上游 2000”按 <strong>2000 bp（2 kb）</strong>计算。</p></aside>
     </section>
     <details id="manual-panel" class="shell panel manual-panel">
       <summary>已有序列？展开直接粘贴（可选）</summary>
@@ -192,6 +198,7 @@
       <div id="gene-cards" class="gene-cards"></div>
       <section class="panel clone-comparison">
         <div class="panel-heading"><div><span class="section-number">02 / COMPARE</span><h2>比较序列，选择克隆模板</h2></div><button id="clone-download-fasta" type="button" class="small-action">下载当前可用序列 FASTA ↓</button></div>
+        <figure class="sequence-map"><picture><source media="(max-width: 600px)" srcset="./assets/promoter-cds-mobile.svg"><img src="./assets/promoter-cds.svg" alt="最多 2000 bp 上游区与红色 CDS 的边界示意；CDS 只追加在查看序列中，二者不是连续的基因组片段" width="1000" height="236" loading="lazy"></picture><figcaption>边界示意：红色 CDS 仅供查看；上游比对与引物设计仍使用上游序列。</figcaption></figure>
         <div class="clone-controls">
           <label>比较对象<select id="clone-kind"><option value="cds">CDS · 完整编码序列</option><option value="mrna">mRNA · 剪接转录本（含已注释 UTR）</option><option value="promoter">启动子候选 · CDS 上游区</option></select></label>
           <label id="promoter-setting" hidden>上游长度（bp）<input id="promoter-length" type="number" min="60" max="2000" step="1" value="2000"></label>
@@ -216,7 +223,7 @@
     <section id="clone-help" class="shell clone-help panel"><div class="panel-heading"><div><span class="section-number">REFERENCE & METHOD</span><h2>版本与判断依据</h2></div></div><div class="help-grid"><article><h3>先看实验材料</h3><p>高一致率不代表可任意替换材料。页面优先选择 White 模板（如有候选），您仍可切换；同一品种不同样本也可能存在变异。CDS、mRNA 与上游区分别比较，不合并成一个分数。</p></article><article><h3>启动子范围有明确边界</h3><p>这里提取注释 CDS 起点之前最多 2000 bp，排除 CDS，自动对负链反向互补。它可能包含 5′UTR、邻近基因或重复区，不等同于已验证的 TSS 启动子。查看时在上游区之后追加拼接 CDS 并标红，明确标注边界；两段拼接仅供对照，不代表连续基因组片段。</p></article><article><h3>mRNA 按注释提供</h3><p>mRNA 按外显子或 CDS＋UTR 注释拼接，去除内含子，使用 T 表示便于 cDNA 克隆。缺少转录本结构或 UTR 注释时明确提示，不自动补齐未注释的两端，也不宣称经验证的全长。</p></article></div><details><summary>查看参考库来源、规模与算法</summary><div id="reference-catalog"></div><p>序列比较：全局 Needleman–Wunsch，匹配 +2、不匹配 −1、缺口 −2；全长一致率 = 明确相同碱基 / 全部比对列。N 不计为匹配。近似覆盖 = 无缺口配对碱基 / 原序列长度。</p><p>Tm：SantaLucia 最近邻参数、熵盐校正及 Mg/dNTP 钠当量；对称序列使用对称校正。默认条件可在上方修改。连续互补初筛阈值：3′ 端互补 &lt;5 bp、发夹连续茎 &lt;6 bp、同聚物 ≤5、两条引物 ΔTm ≤3 °C、GC 25–75%。</p><p><a href="https://biopython.org/docs/latest/api/Bio.SeqUtils.MeltingTemp.html" target="_blank" rel="noopener">Tm 方法说明 ↗</a> · <a href="https://github.com/bbuchfink/diamond" target="_blank" rel="noopener">DIAMOND 同源候选搜索 ↗</a> · <a href="https://primer3.org/" target="_blank" rel="noopener">Primer3 复核 ↗</a></p></details></section>
   </div>
   </main>
-  <footer class="footer"><div class="shell"><span class="footer-brand">SeqLab <span>序列比对与克隆设计</span></span><span>从序列差异到克隆候选 · 免费公开使用</span></div></footer>
+  <footer class="footer"><div class="shell"><span class="footer-brand">SeqLab <span>序列比对与克隆设计</span></span><span>从序列差异到克隆候选 · 免费公开使用<br><small>猕猴桃配图为主题视觉插图，基因结构图为方法示意。</small></span></div></footer>
   <script type="module" src="./app.mjs?v=20261019-clone4"></script>
   <script type="module" src="./clone-app.mjs?v=20261019-clone4"></script>
 </body>

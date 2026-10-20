@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 236" role="img" aria-labelledby="title desc">
+  <title id="title">上游区与 CDS 显示边界示意</title>
+  <desc id="desc">左侧为按转录方向提取的最多 2000 bp CDS 起点前序列，右侧为拼接后供查看的 CDS。红色 CDS 不参与上游区比对或引物设计，也不表示与上游区在基因组上连续。</desc>
+  <rect width="1000" height="236" rx="18" fill="#f4f8f0"/>
+  <path d="M56 66H944" stroke="#d0decf" stroke-width="2"/>
+  <text x="55" y="43" fill="#496551" font-family="Arial,sans-serif" font-size="16" font-weight="700" letter-spacing="1.5">VIEWING CONTEXT</text>
+  <text x="55" y="107" fill="#2e6445" font-family="Arial,sans-serif" font-size="17" font-weight="700">UPSTREAM ≤ 2 kb</text>
+  <text x="604" y="107" fill="#a6362d" font-family="Arial,sans-serif" font-size="17" font-weight="700">CDS (RED)</text>
+  <rect x="55" y="124" width="480" height="38" rx="9" fill="#81b98a"/>
+  <rect x="604" y="124" width="340" height="38" rx="9" fill="#be4d40"/>
+  <path d="M563 106v75" stroke="#9baf9c" stroke-width="2" stroke-dasharray="5 5"/>
+  <path d="M535 143h69" stroke="#9baf9c" stroke-width="2" stroke-dasharray="6 6"/>
+  <text x="55" y="194" fill="#52755a" font-family="Arial,sans-serif" font-size="14">comparison + upstream primer template</text>
+  <text x="604" y="194" fill="#9e433a" font-family="Arial,sans-serif" font-size="14">added only to the sequence view</text>
+  <text x="944" y="219" text-anchor="end" fill="#78917c" font-family="Arial,sans-serif" font-size="11">SCHEMATIC · NOT ONE GENOMIC FRAGMENT</text>
+</svg>

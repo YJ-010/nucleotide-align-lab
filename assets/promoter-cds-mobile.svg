@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 270" role="img" aria-labelledby="title desc">
+  <title id="title">上游区及红色 CDS 的手机端示意</title>
+  <desc id="desc">上游区最多 2000 bp；CDS 用红色表示，仅追加供查看，不作为连续基因组片段或上游引物模板。</desc>
+  <rect width="340" height="270" rx="18" fill="#f4f8f0"/>
+  <text x="22" y="39" fill="#4c6b53" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1">SEQUENCE VIEW</text>
+  <text x="22" y="78" fill="#2e6445" font-family="Arial,sans-serif" font-size="15" font-weight="700">UPSTREAM ≤ 2 kb</text>
+  <rect x="22" y="93" width="294" height="33" rx="8" fill="#81b98a"/>
+  <path d="M169 128v32" stroke="#9baf9c" stroke-width="2" stroke-dasharray="5 5"/>
+  <text x="22" y="184" fill="#a6362d" font-family="Arial,sans-serif" font-size="15" font-weight="700">CDS (RED)</text>
+  <rect x="22" y="199" width="222" height="33" rx="8" fill="#be4d40"/>
+  <text x="22" y="252" fill="#667f6c" font-family="Arial,sans-serif" font-size="11">SCHEMATIC · VIEW ONLY</text>
+</svg>

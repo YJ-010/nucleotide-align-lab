@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 360" role="img" aria-labelledby="title desc">
+  <title id="title">基因到转录本的结构示意</title>
+  <desc id="desc">基因组 DNA 中外显子由内含子分隔，剪接后的 mRNA 连接外显子，CDS 是其中的编码片段。本图不对应真实基因。</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#f7fbf3"/><stop offset="1" stop-color="#e5f2df"/></linearGradient>
+    <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#bdd6bb" opacity=".55"/></pattern>
+  </defs>
+  <rect width="620" height="360" rx="24" fill="url(#bg)"/>
+  <rect width="620" height="360" rx="24" fill="url(#dots)"/>
+  <text x="30" y="43" fill="#426451" font-family="Arial,sans-serif" font-size="16" font-weight="700" letter-spacing="2">GENE  →  TRANSCRIPT</text>
+  <text x="30" y="91" fill="#254b39" font-family="Arial,sans-serif" font-size="15" font-weight="700">Genomic DNA</text>
+  <path d="M38 135H580" stroke="#789583" stroke-width="6" stroke-linecap="round"/>
+  <rect x="70" y="116" width="60" height="38" rx="7" fill="#b9d3ae"/>
+  <rect x="190" y="116" width="74" height="38" rx="7" fill="#a9cfa5"/>
+  <rect x="354" y="116" width="89" height="38" rx="7" fill="#a9cfa5"/>
+  <rect x="510" y="116" width="59" height="38" rx="7" fill="#b9d3ae"/>
+  <text x="155" y="176" text-anchor="middle" fill="#728c7a" font-family="Arial,sans-serif" font-size="13">intron</text>
+  <text x="307" y="176" text-anchor="middle" fill="#728c7a" font-family="Arial,sans-serif" font-size="13">intron</text>
+  <path d="M309 179v24m-8-8 8 8 8-8" fill="none" stroke="#6a9f72" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="30" y="232" fill="#254b39" font-family="Arial,sans-serif" font-size="15" font-weight="700">Spliced mRNA</text>
+  <rect x="68" y="250" width="82" height="33" rx="6" fill="#c9ddba"/>
+  <rect x="150" y="250" width="248" height="33" fill="#bb4b3b"/>
+  <rect x="398" y="250" width="96" height="33" rx="6" fill="#c9ddba"/>
+  <text x="109" y="272" fill="#355645" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700">UTR</text>
+  <text x="274" y="272" fill="#fff" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700">CDS</text>
+  <text x="446" y="272" fill="#355645" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700">UTR</text>
+  <circle cx="43" cy="324" r="6" fill="#b9d3ae"/><text x="60" y="328" fill="#526c59" font-family="Arial,sans-serif" font-size="13">exon / UTR</text>
+  <circle cx="216" cy="324" r="6" fill="#bb4b3b"/><text x="233" y="328" fill="#526c59" font-family="Arial,sans-serif" font-size="13">coding region</text>
+  <text x="575" y="329" text-anchor="end" fill="#78937b" font-family="Arial,sans-serif" font-size="11">SCHEMATIC</text>
+</svg>
