@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#102925">
-  <meta name="description" content="免费、免登录的序列研究工作台。支持 AB1 测序比对、猕猴桃四参考版本同源基因查询、CDS 与 2 kb 上游区比较及克隆引物初筛。">
-  <title>SeqLab · 序列比对与猕猴桃克隆设计</title>
-  <link rel="stylesheet" href="./styles.css?v=20261020-visual1">
+  <meta name="description" content="免费、免登录的猕猴桃基因克隆、载体构建引物设计与测序验证工作台。支持九种载体模板、同源臂自动拼接和 AB1/FASTA 比对。">
+  <title>SeqLab · 猕猴桃基因克隆与载体构建</title>
+  <link rel="stylesheet" href="./styles.css?v=20261022-vector1">
 </head>
 <body>
   <header class="site-header">
@@ -22,12 +22,13 @@
     </div>
   </header>
 
-  <nav class="shell workspace-nav" role="tablist" aria-label="研究工作区">
-    <button id="sequence-tab" class="workspace-tab active" type="button" role="tab" aria-controls="sequence-workspace" aria-selected="true">测序与序列比对 <small>AB1 / FASTA / ApE</small></button>
-    <button id="clone-tab" class="workspace-tab" type="button" role="tab" aria-controls="clone-workspace" aria-selected="false">猕猴桃基因克隆 <small>四个参考版本 · CDS · 启动子 · 引物</small></button>
+  <nav class="shell workspace-nav" role="tablist" aria-label="从基因到测序验证的三步工作区">
+    <button id="clone-tab" class="workspace-tab active" type="button" role="tab" aria-controls="clone-workspace" aria-selected="true"><span class="tab-step">01</span> 猕猴桃基因克隆 <small>查基因 · 比序列 · 定模板</small></button>
+    <button id="vector-tab" class="workspace-tab" type="button" role="tab" aria-controls="vector-workspace" aria-selected="false" tabindex="-1"><span class="tab-step">02</span> 构建载体 <small>选载体 · 自动同源臂 · 出引物</small></button>
+    <button id="sequence-tab" class="workspace-tab" type="button" role="tab" aria-controls="sequence-workspace" aria-selected="false" tabindex="-1"><span class="tab-step">03</span> 测序比对验证 <small>AB1 / SEQ / FASTA</small></button>
   </nav>
   <main id="top">
-  <div id="sequence-workspace" role="tabpanel" aria-labelledby="sequence-tab">
+  <div id="sequence-workspace" role="tabpanel" aria-labelledby="sequence-tab" hidden>
     <section class="intro shell visual-intro seq-intro">
       <div class="intro-copy">
       <div class="eyebrow"><span class="eyebrow-line"></span> SEQUENCE ALIGNMENT STUDIO <span class="eyebrow-line"></span></div>
@@ -159,7 +160,7 @@
       <p class="method-note">本工具提供全局比对与测序片段定位（参照两端不罚分），多个序列以第一条为中心合并。匹配 +2、模糊兼容 0、不匹配 −1、缺口 −2。保留 IUPAC 模糊碱基，不自动判定杂合突变。复杂长片段、结构变异和发表级分析请用专业软件复核；不生成 DNAMAN 专有工程文件。</p>
     </section>
   </div>
-  <div id="clone-workspace" role="tabpanel" aria-labelledby="clone-tab" hidden>
+  <div id="clone-workspace" role="tabpanel" aria-labelledby="clone-tab">
     <section class="intro shell visual-intro clone-intro">
       <div class="intro-copy">
       <div class="eyebrow">KIWIFRUIT · FROM GENE ID TO CLONING</div>
@@ -208,7 +209,7 @@
         <div id="compare-status" class="status" role="status" aria-live="polite"></div>
         <div id="comparison-matrix" class="comparison-matrix"></div>
         <div id="pair-detail" class="pair-detail" hidden><div class="section-bar"><h3 id="pair-title"></h3><button id="pair-download" type="button" class="small-action">下载这组对齐 FASTA ↓</button></div><p id="pair-stats" class="field-hint"></p><pre id="pair-alignment" tabindex="0"></pre></div>
-        <div class="template-area"><label>用于克隆的模板<select id="clone-template"></select></label><label class="stop-setting"><input id="remove-stop" type="checkbox"> CDS 去掉终止密码子（用于融合表达）</label><p id="template-summary"></p><details id="template-detail"><summary>查看序列与边界（CDS 标红）</summary><p id="sequence-view-note" class="sequence-view-note"></p><div id="sequence-legend" class="sequence-legend"></div><pre id="template-sequence" tabindex="0"></pre><button id="annotated-download" type="button" class="small-action">下载标红序列 HTML ↓</button><button id="template-download" type="button" class="small-action">下载当前模板 FASTA ↓</button><button id="send-to-alignment" type="button" class="small-action">送到测序比对作为参照 →</button></details></div>
+        <div class="template-area"><label>用于克隆的模板<select id="clone-template"></select></label><label class="stop-setting"><input id="remove-stop" type="checkbox"> CDS 去掉终止密码子（用于融合表达）</label><p id="template-summary"></p><details id="template-detail"><summary>查看序列与边界（CDS 标红）</summary><p id="sequence-view-note" class="sequence-view-note"></p><div id="sequence-legend" class="sequence-legend"></div><pre id="template-sequence" tabindex="0"></pre><button id="annotated-download" type="button" class="small-action">下载标红序列 HTML ↓</button><button id="template-download" type="button" class="small-action">下载当前模板 FASTA ↓</button><button id="send-to-vector" type="button" class="small-action filled">带入载体构建 →</button><button id="send-to-alignment" type="button" class="small-action">送到测序比对作为参照 →</button></details></div>
       </section>
       <section class="panel clone-primer">
         <div class="panel-heading"><div><span class="section-number">03 / DESIGN</span><h2>生成克隆引物</h2></div><span class="result-state">固定目标片段两端</span></div>
@@ -222,9 +223,100 @@
     </section>
     <section id="clone-help" class="shell clone-help panel"><div class="panel-heading"><div><span class="section-number">REFERENCE & METHOD</span><h2>版本与判断依据</h2></div></div><div class="help-grid"><article><h3>先看实验材料</h3><p>高一致率不代表可任意替换材料。页面优先选择 White 模板（如有候选），您仍可切换；同一品种不同样本也可能存在变异。CDS、mRNA 与上游区分别比较，不合并成一个分数。</p></article><article><h3>启动子范围有明确边界</h3><p>这里提取注释 CDS 起点之前最多 2000 bp，排除 CDS，自动对负链反向互补。它可能包含 5′UTR、邻近基因或重复区，不等同于已验证的 TSS 启动子。查看时在上游区之后追加拼接 CDS 并标红，明确标注边界；两段拼接仅供对照，不代表连续基因组片段。</p></article><article><h3>mRNA 按注释提供</h3><p>mRNA 按外显子或 CDS＋UTR 注释拼接，去除内含子，使用 T 表示便于 cDNA 克隆。缺少转录本结构或 UTR 注释时明确提示，不自动补齐未注释的两端，也不宣称经验证的全长。</p></article></div><details><summary>查看参考库来源、规模与算法</summary><div id="reference-catalog"></div><p>序列比较：全局 Needleman–Wunsch，匹配 +2、不匹配 −1、缺口 −2；全长一致率 = 明确相同碱基 / 全部比对列。N 不计为匹配。近似覆盖 = 无缺口配对碱基 / 原序列长度。</p><p>Tm：SantaLucia 最近邻参数、熵盐校正及 Mg/dNTP 钠当量；对称序列使用对称校正。默认条件可在上方修改。连续互补初筛阈值：3′ 端互补 &lt;5 bp、发夹连续茎 &lt;6 bp、同聚物 ≤5、两条引物 ΔTm ≤3 °C、GC 25–75%。</p><p><a href="https://biopython.org/docs/latest/api/Bio.SeqUtils.MeltingTemp.html" target="_blank" rel="noopener">Tm 方法说明 ↗</a> · <a href="https://github.com/bbuchfink/diamond" target="_blank" rel="noopener">DIAMOND 同源候选搜索 ↗</a> · <a href="https://primer3.org/" target="_blank" rel="noopener">Primer3 复核 ↗</a></p></details></section>
   </div>
+
+  <div id="vector-workspace" role="tabpanel" aria-labelledby="vector-tab" hidden>
+    <section class="intro shell visual-intro vector-intro">
+      <div class="intro-copy">
+        <div class="eyebrow">VECTOR CONSTRUCTION · PRIMER DESIGN</div>
+        <h1>选好载体，粘贴序列，<em>直接得到订购引物。</em></h1>
+        <p>按实验室 Word 模板自动选择 CDS 或启动子，处理 ATG 与终止密码子，拼接正反向同源臂，并完成 Tm、GC、互补及酶切位点初筛。</p>
+        <div class="intro-pills"><span>9 种载体模板</span><span>自动同源臂</span><span>一键导出订购单</span><span>本地计算</span></div>
+      </div>
+      <div class="vector-hero-art" aria-hidden="true">
+        <div class="dna-fragment"><span>同源臂</span><strong>目标基因 / 启动子</strong><span>同源臂</span></div>
+        <div class="hero-arrow">↓</div>
+        <div class="plasmid-ring"><span>VECTOR</span><i></i><b>INSERT</b></div>
+      </div>
+    </section>
+  
+    <section class="shell vector-workflow-strip" aria-label="载体构建三步">
+      <div><span>1</span><p><strong>粘贴序列</strong><small>CDS 和启动子可一起保存</small></p></div>
+      <div><span>2</span><p><strong>选择载体</strong><small>系统自动套用模板规则</small></p></div>
+      <div><span>3</span><p><strong>生成并复核</strong><small>复制引物或下载订购单</small></p></div>
+    </section>
+  
+    <section class="shell vector-builder-grid">
+      <section class="panel vector-input-panel">
+        <div class="panel-heading"><div><span class="section-number">01 / SEQUENCE</span><h2>输入目标序列</h2></div><button id="vector-example" class="text-button" type="button">载入模拟示例 ↗</button></div>
+        <label class="vector-name-field">基因／片段名称<input id="vector-gene-name" autocomplete="off" spellcheck="false" placeholder="例如 AcERF1"></label>
+        <div id="vector-cds-card" class="vector-sequence-card required-sequence">
+          <div class="vector-field-title"><label for="vector-cds">CDS 序列（5′→3′）</label><span id="vector-cds-count">尚未输入</span></div>
+          <textarea id="vector-cds" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder=">AcERF1_CDS&#10;ATG...TAA"></textarea>
+          <p>可粘贴 FASTA 或纯序列。构建融合蛋白时，系统按载体规则自动保留或去除 ATG / 终止密码子。</p>
+        </div>
+        <div id="vector-promoter-card" class="vector-sequence-card">
+          <div class="vector-field-title"><label for="vector-promoter">启动子序列（5′→3′）</label><span id="vector-promoter-count">尚未输入</span></div>
+          <textarea id="vector-promoter" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder=">AcERF1_promoter&#10;ACGT..."></textarea>
+          <p>选择 pGreen-0800 时使用此序列；不会把 CDS 拼入启动子引物。</p>
+        </div>
+        <button id="vector-clear" class="clear-button" type="button">清空输入</button>
+      </section>
+  
+      <section class="panel vector-choice-panel">
+        <div class="panel-heading"><div><span class="section-number">02 / VECTOR</span><h2>选择载体模板</h2></div><span id="vector-required-sequence" class="result-state">本载体读取：CDS 序列</span></div>
+        <label class="vector-select-label">构建载体<select id="vector-template" class="vector-select"></select></label>
+        <div id="vector-template-summary" class="vector-template-summary"></div>
+        <details class="vector-advanced">
+          <summary>高级设置：修改同源臂或起止密码子规则</summary>
+          <p class="field-hint">默认值来自您提供的 Word 模板。只有确认实际载体图谱与模板不同时才修改。</p>
+          <div class="vector-rule-checks">
+            <label><input id="vector-remove-atg" type="checkbox"> 去除 CDS 起始 ATG</label>
+            <label><input id="vector-remove-stop" type="checkbox"> 去除 CDS 终止密码子</label>
+          </div>
+          <div class="tail-fields">
+            <label>正向 5′ 同源臂<input id="vector-forward-tail" autocomplete="off" spellcheck="false"></label>
+            <label>反向 5′ 同源臂<input id="vector-reverse-tail" autocomplete="off" spellcheck="false"></label>
+          </div>
+          <div class="vector-parameter-grid">
+            <label>目标 Tm（°C）<input id="vector-tm" type="number" value="60" min="50" max="70" step="0.5"></label>
+            <label>退火区最短（nt）<input id="vector-min" type="number" value="18" min="18" max="35"></label>
+            <label>退火区最长（nt）<input id="vector-max" type="number" value="30" min="18" max="35"></label>
+          </div>
+        </details>
+        <button id="vector-design" class="primary-button vector-design-button" type="button">按 C-LUC 模板生成引物 →</button>
+        <div id="vector-status" class="status" role="status" aria-live="polite"></div>
+        <p class="limits">模板可自动拼接同源臂，但无法替代实际质粒图谱核对。融合载体尤其要确认阅读框、标签位置、载体批次及线性化位点。</p>
+      </section>
+    </section>
+  
+    <section id="vector-results" class="shell panel vector-results" hidden>
+      <div class="panel-heading result-heading"><div><span class="section-number">03 / PRIMERS</span><h2>载体构建结果</h2></div><span class="result-state ready">5′→3′ 可复制</span></div>
+      <div id="vector-output"></div>
+      <div id="vector-actions" class="vector-actions" hidden>
+        <button id="vector-copy-all" class="small-action" type="button">复制完整报告</button>
+        <button id="vector-download-report" class="small-action" type="button">下载引物报告 ↓</button>
+        <button id="vector-download-tsv" class="small-action filled" type="button">下载引物订购单 TSV ↓</button>
+        <button id="vector-download-fasta" class="small-action" type="button">下载构建序列 FASTA ↓</button>
+        <button id="vector-send-to-alignment" class="primary-button" type="button">送入测序比对验证 →</button>
+      </div>
+    </section>
+  
+    <section id="vector-help" class="shell panel vector-help">
+      <div class="panel-heading"><div><span class="section-number">RULES & SAFETY</span><h2>自动设计做了什么</h2></div></div>
+      <div class="help-grid">
+        <article><span class="help-index">01</span><h3>先按载体处理序列</h3><p>系统根据模板选择 CDS 或启动子，再决定是否去除 ATG 和终止密码子；不会自动截短目标片段来迁就引物。</p></article>
+        <article><span class="help-index">02</span><h3>再拼同源臂与退火区</h3><p>正向引物为“正向同源臂＋目标片段 5′端”，反向引物为“反向同源臂＋目标片段 3′端反向互补”。Tm 仅按退火区计算。</p></article>
+        <article><span class="help-index">03</span><h3>最后用测序确认</h3><p>载体连接和挑克隆完成后，用“送入测序比对验证”加载预期插入片段，再导入 AB1、SEQ 或 FASTA 判断覆盖区和差异。</p></article>
+      </div>
+      <p class="method-note">本页提供实验前的计算初筛，检查退火区 Tm、GC、同聚物、简化发夹与连续互补，并提示插入片段中的相关酶切位点。它不等同于全基因组特异性分析，也不能判断质粒实际图谱是否与模板一致；正式订购前请用实际载体序列、Primer3 / Primer-BLAST 和实验室 SOP 复核。</p>
+    </section>
+  </div>
   </main>
   <footer class="footer"><div class="shell"><span class="footer-brand">SeqLab <span>序列比对与克隆设计</span></span><span>从序列差异到克隆候选 · 免费公开使用<br><small>猕猴桃配图为主题视觉插图，基因结构图为方法示意。</small></span></div></footer>
-  <script type="module" src="./app.mjs?v=20261019-clone4"></script>
-  <script type="module" src="./clone-app.mjs?v=20261019-clone4"></script>
+  <script type="module" src="./workspace-nav.mjs?v=20261022-vector1"></script>
+  <script type="module" src="./app.mjs?v=20261022-vector1"></script>
+  <script type="module" src="./clone-app.mjs?v=20261022-vector1"></script>
+  <script type="module" src="./vector-app.mjs?v=20261022-vector1"></script>
 </body>
 </html>
+

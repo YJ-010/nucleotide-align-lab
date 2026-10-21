@@ -1,14 +1,10 @@
-import {parseSequences} from './align-core.mjs?v=20261019-clone4';
-import {VERSIONS,shardFor,cloningTemplate,compareDNA,designPrimers,bindingCheck,fastaText,withTranscript,sequenceDisplay} from './clone-core.mjs?v=20261019-clone4';
+import {parseSequences} from './align-core.mjs?v=20261022-vector1';
+import {VERSIONS,shardFor,cloningTemplate,compareDNA,designPrimers,bindingCheck,fastaText,withTranscript,sequenceDisplay} from './clone-core.mjs?v=20261022-vector1';
 const $=id=>document.getElementById(id), labels=Object.fromEntries(VERSIONS), DATA='./data/kiwi-20261019/';
 let revision=0,manifest=null,source=null,selected=new Map(),candidateLists=new Map(),comparisons=[],activePair=null,primerResult=null,primerReport='',worker=null,jobId=0;
 const jobs=new Map(),cache=new Map();
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function say(id,text,error=false){const n=$(id);n.textContent=text;n.classList.toggle('clone-status-error',error);}
-function tab(which){const clone=which==='clone';$('clone-workspace').hidden=!clone;$('sequence-workspace').hidden=clone;for(const [id,on] of [['clone-tab',clone],['sequence-tab',!clone]]){$(id).classList.toggle('active',on);$(id).setAttribute('aria-selected',String(on));$(id).tabIndex=on?0:-1;}window.history.replaceState(null,'',clone?'#clone':'#alignment');}
-$('sequence-tab').addEventListener('click',()=>tab('sequence'));$('clone-tab').addEventListener('click',()=>tab('clone'));
-for(const id of ['sequence-tab','clone-tab'])$(id).addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'sequence':e.key==='End'?'clone':id==='sequence-tab'?'clone':'sequence';tab(next);$(next==='clone'?'clone-tab':'sequence-tab').focus();}});
-window.addEventListener('hashchange',()=>tab(window.location.hash==='#clone'?'clone':'sequence'));if(window.location.hash==='#clone')tab('clone');
 function cancelJobs(){if(worker){worker.terminate();worker=null;}for(const job of jobs.values()){clearTimeout(job.timer);job.reject(new Error('参数已更改，请重新计算。'));}jobs.clear();}
 function clearPrimer(){primerResult=null;primerReport='';$('primer-results').replaceChildren();$('primer-downloads').hidden=true;say('primer-status','');}
 function invalidateComparison(){revision++;cancelJobs();comparisons=[];activePair=null;$('comparison-matrix').replaceChildren();$('pair-detail').hidden=true;say('compare-status','参数已更新，点击比较当前候选。');clearPrimer();}
@@ -144,7 +140,8 @@ checkedAction('annotated-download',()=>{
  save(`SeqLab_${t.record.id}_${t.kind}_annotated.html`,html,'text/html;charset=utf-8');
 });
 checkedAction('pair-download',()=>{if(!activePair)throw new Error('请先选择一组比较。');const p=activePair;save(`SeqLab_${p.a.id}_${p.b.id}_aligned.fasta`,`>${p.a.version}|${p.a.id}\n${p.result.alignedA}\n>${p.b.version}|${p.b.id}\n${p.result.alignedB}\n`);});
-checkedAction('send-to-alignment',()=>{const t=currentTemplate();window.dispatchEvent(new CustomEvent('seqlab-reference',{detail:{name:`${t.record.version}|${t.record.id}|${t.kind}`,sequence:t.sequence}}));tab('sequence');$('sequence-input').scrollIntoView({behavior:'smooth',block:'center'});});
+checkedAction('send-to-vector',()=>{const t=currentTemplate();if(t.kind==='mrna')throw new Error('载体构建请先切换为 CDS 或启动子；含 UTR 的 mRNA 不应直接当作 CDS。');window.dispatchEvent(new CustomEvent('seqlab-vector-input',{detail:{name:`${t.record.version}|${t.record.id}`,kind:t.kind,sequence:t.sequence}}));});
+checkedAction('send-to-alignment',()=>{const t=currentTemplate();window.dispatchEvent(new CustomEvent('seqlab-reference',{detail:{name:`${t.record.version}|${t.record.id}|${t.kind}`,sequence:t.sequence}}));window.dispatchEvent(new CustomEvent('seqlab-show-workspace',{detail:{workspace:'sequence'}}));$('sequence-input').scrollIntoView({behavior:'smooth',block:'center'});});
 for(const id of ['primer-tm','primer-min','primer-max','primer-salt','primer-mg','primer-dntp','primer-conc','forward-tail','reverse-tail'])$(id).addEventListener('input',()=>{revision++;cancelJobs();clearPrimer();});
 $('design-primers').addEventListener('click',async()=>{
  clearPrimer();const rev=revision;$('design-primers').disabled=true;say('primer-status','正在筛选覆盖目标片段两端的引物，并检查当前候选序列中的匹配…');
@@ -164,8 +161,6 @@ $('primer-copy').addEventListener('click',async()=>{try{if(!primerReport)return;
 $('primer-download').addEventListener('click',()=>{if(primerReport)save('SeqLab_'+primerResult.template.record.id+'_primers.txt',primerReport);});
 $('primer-tsv').addEventListener('click',()=>{if(!primerResult?.pairs.length)return;const rows=[['名称','序列_5to3','退火区','Tm_C','GC_percent','目标产物_bp','参考版本','基因编号','验证状态']];primerResult.pairs.forEach((p,i)=>{for(const [d,x] of [['F',p.forward],['R',p.reverse]])rows.push([`${primerResult.template.record.id}_${i+1}_${d}`,x.fullSequence,x.sequence,x.tm.toFixed(2),x.gc.toFixed(1),p.productSize,primerResult.template.record.version,primerResult.template.record.id,'未做全基因组特异性验证']);});save('SeqLab_primer_order.tsv','\uFEFF'+rows.map(r=>r.join('\t')).join('\n'),'text/tab-separated-values;charset=utf-8');});
 
-document.querySelector('.help-link').addEventListener('click',e=>{e.preventDefault();$($('clone-workspace').hidden?'help':'clone-help').scrollIntoView({behavior:'smooth',block:'start'});});
-
 let simulatedInput=false;
 for(const [v,name] of VERSIONS){
  const box=el('div',undefined,'manual-version');box.append(el('h3',name));
@@ -182,3 +177,4 @@ $('manual-example').addEventListener('click',()=>{$('manual-panel').open=true;
  const codons=['GCC','GCT','CAG','ATC','GAC','GGT','CTG','AAC'];let seed=12073;const bases='ACGT';let up='';for(let i=0;i<2000;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;up+=bases[seed>>>30];}
  VERSIONS.forEach(([v],i)=>{const middle=Array.from({length:189},(_,k)=>codons[k%codons.length]);middle[20+i*10]=codons[(i+3)%codons.length];$(`manual-${v}-id`).value='SIMULATED_'+v.toUpperCase();$(`manual-${v}-cds`).value='ATGACCGTACAGGATCTGCAG'+middle.join('')+['TGC','ATC','AGG','TAC','CGA','GCT','TAA'].join('');$(`manual-${v}-mrna`).value='CTAGCTAGGATCAGTCTAGG'+$(`manual-${v}-cds`).value+'TTCAGTACGATCTGACTGAT';const at=500+i*73;$(`manual-${v}-upstream`).value=up.slice(0,at)+bases[(bases.indexOf(up[at])+1)%4]+up.slice(at+1);});simulatedInput=true;$('manual-use').click();
 });
+
