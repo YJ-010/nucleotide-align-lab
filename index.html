@@ -5,15 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#102925">
   <meta name="description" content="免费、免登录的猕猴桃基因克隆、载体构建引物设计与测序验证工作台。支持九种载体模板、同源臂自动拼接和 AB1/FASTA 比对。">
-  <title>SeqLab · 猕猴桃基因克隆与载体构建</title>
-  <link rel="stylesheet" href="./styles.css?v=20261022-vector1">
+  <title>猕猴桃基因工坊 · 基因克隆、载体构建与测序验证</title>
+  <meta property="og:title" content="猕猴桃基因工坊 | KiwiGene Lab">
+  <meta property="og:description" content="从猕猴桃基因查询，到载体引物设计与测序比对，一站式浏览器工作台。">
+  <link rel="icon" type="image/svg+xml" href="./assets/kiwi-mark.svg">
+  <link rel="stylesheet" href="./styles.css?v=20261021-kiwi2">
 </head>
 <body>
   <header class="site-header">
     <div class="shell nav-row">
-      <a class="brand" href="#top" aria-label="SeqLab 首页">
-        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span>SeqLab <small>序列研究工作台</small></span>
+      <a class="brand" href="#clone" aria-label="猕猴桃基因工坊首页">
+        <img class="kiwi-brand-mark" src="./assets/kiwi-mark.svg" width="38" height="38" alt="">
+        <span class="brand-name">猕猴桃基因工坊 <small>KIWIGENE LAB</small></span>
       </a>
       <div class="header-actions">
         <span class="privacy-indicator"><span class="pulse"></span> 浏览器本地计算</span>
@@ -165,7 +168,8 @@
       <div class="intro-copy">
       <div class="eyebrow">KIWIFRUIT · FROM GENE ID TO CLONING</div>
       <h1>从一个基因编号，<em>找到合适的克隆序列。</em></h1>
-      <p>查询四个参考版本的同源候选，分别比较 CDS、mRNA 和上游区，再为选定模板生成克隆引物。</p>
+      <p>查询四个猕猴桃参考版本的同源候选，比较 CDS、mRNA 和上游区；确定模板后，一键进入载体引物设计与测序验证。</p>
+      <button class="hero-shortcut" type="button" data-open-workspace="vector">已有 CDS 或启动子？直接设计载体引物 →</button>
       <div class="intro-pills"><span>Hong Yang v2</span><span>Hong Yang v3 update</span><span>Red5</span><span>White v1.0</span></div>
       </div>
       <div class="hero-media"><img src="./assets/kiwi-vine.webp" alt="猕猴桃藤蔓、叶片与果实的主题视觉插图" width="1536" height="1024" loading="lazy"></div>
@@ -228,7 +232,7 @@
     <section class="intro shell visual-intro vector-intro">
       <div class="intro-copy">
         <div class="eyebrow">VECTOR CONSTRUCTION · PRIMER DESIGN</div>
-        <h1>选好载体，粘贴序列，<em>直接得到订购引物。</em></h1>
+        <h1>选好载体，粘贴序列，<em>自动设计候选引物。</em></h1>
         <p>按实验室 Word 模板自动选择 CDS 或启动子，处理 ATG 与终止密码子，拼接正反向同源臂，并完成 Tm、GC、互补及酶切位点初筛。</p>
         <div class="intro-pills"><span>9 种载体模板</span><span>自动同源臂</span><span>一键导出订购单</span><span>本地计算</span></div>
       </div>
@@ -240,7 +244,7 @@
     </section>
   
     <section class="shell vector-workflow-strip" aria-label="载体构建三步">
-      <div><span>1</span><p><strong>粘贴序列</strong><small>CDS 和启动子可一起保存</small></p></div>
+      <div><span>1</span><p><strong>粘贴序列</strong><small>CDS 和启动子可同时输入</small></p></div>
       <div><span>2</span><p><strong>选择载体</strong><small>系统自动套用模板规则</small></p></div>
       <div><span>3</span><p><strong>生成并复核</strong><small>复制引物或下载订购单</small></p></div>
     </section>
@@ -282,6 +286,8 @@
             <label>退火区最短（nt）<input id="vector-min" type="number" value="18" min="18" max="35"></label>
             <label>退火区最长（nt）<input id="vector-max" type="number" value="30" min="18" max="35"></label>
           </div>
+          <button id="vector-reset-rules" class="text-button" type="button">恢复此载体的默认规则 ↺</button>
+          <p class="field-hint">Tm 默认条件：单价盐 50 mM、Mg²⁺ 1.5 mM、总 dNTP 0.2 mM、寡核苷酸 250 nM；不等于实际 PCR 退火温度。</p>
         </details>
         <button id="vector-design" class="primary-button vector-design-button" type="button">按 C-LUC 模板生成引物 →</button>
         <div id="vector-status" class="status" role="status" aria-live="polite"></div>
@@ -295,7 +301,7 @@
       <div id="vector-actions" class="vector-actions" hidden>
         <button id="vector-copy-all" class="small-action" type="button">复制完整报告</button>
         <button id="vector-download-report" class="small-action" type="button">下载引物报告 ↓</button>
-        <button id="vector-download-tsv" class="small-action filled" type="button">下载引物订购单 TSV ↓</button>
+        <button id="vector-download-tsv" class="small-action filled" type="button">导出候选 1 清单 TSV ↓</button>
         <button id="vector-download-fasta" class="small-action" type="button">下载构建序列 FASTA ↓</button>
         <button id="vector-send-to-alignment" class="primary-button" type="button">送入测序比对验证 →</button>
       </div>
@@ -306,17 +312,17 @@
       <div class="help-grid">
         <article><span class="help-index">01</span><h3>先按载体处理序列</h3><p>系统根据模板选择 CDS 或启动子，再决定是否去除 ATG 和终止密码子；不会自动截短目标片段来迁就引物。</p></article>
         <article><span class="help-index">02</span><h3>再拼同源臂与退火区</h3><p>正向引物为“正向同源臂＋目标片段 5′端”，反向引物为“反向同源臂＋目标片段 3′端反向互补”。Tm 仅按退火区计算。</p></article>
-        <article><span class="help-index">03</span><h3>最后用测序确认</h3><p>载体连接和挑克隆完成后，用“送入测序比对验证”加载预期插入片段，再导入 AB1、SEQ 或 FASTA 判断覆盖区和差异。</p></article>
+        <article><span class="help-index">03</span><h3>最后用测序确认</h3><p>加载预期插入片段，再导入 AB1、SEQ 或 FASTA 查看覆盖区和差异。未覆盖位置、两端连接位点及完整质粒结构，仍需额外测序和图谱核对。</p></article>
       </div>
       <p class="method-note">本页提供实验前的计算初筛，检查退火区 Tm、GC、同聚物、简化发夹与连续互补，并提示插入片段中的相关酶切位点。它不等同于全基因组特异性分析，也不能判断质粒实际图谱是否与模板一致；正式订购前请用实际载体序列、Primer3 / Primer-BLAST 和实验室 SOP 复核。</p>
     </section>
   </div>
   </main>
-  <footer class="footer"><div class="shell"><span class="footer-brand">SeqLab <span>序列比对与克隆设计</span></span><span>从序列差异到克隆候选 · 免费公开使用<br><small>猕猴桃配图为主题视觉插图，基因结构图为方法示意。</small></span></div></footer>
-  <script type="module" src="./workspace-nav.mjs?v=20261022-vector1"></script>
-  <script type="module" src="./app.mjs?v=20261022-vector1"></script>
-  <script type="module" src="./clone-app.mjs?v=20261022-vector1"></script>
-  <script type="module" src="./vector-app.mjs?v=20261022-vector1"></script>
+  <footer class="footer"><div class="shell"><span class="footer-brand">猕猴桃基因工坊 <span>KiwiGene Lab</span></span><span>基因克隆 → 载体构建 → 测序验证<br><small>序列在浏览器本地计算；参考库查询需要联网。配图与结构图为示意。</small></span></div></footer>
+  <script type="module" src="./workspace-nav.mjs?v=20261021-kiwi2"></script>
+  <script type="module" src="./app.mjs?v=20261021-kiwi2"></script>
+  <script type="module" src="./clone-app.mjs?v=20261021-kiwi2"></script>
+  <script type="module" src="./vector-app.mjs?v=20261021-kiwi2"></script>
 </body>
 </html>
 

@@ -505,7 +505,7 @@ $("download-button").addEventListener("click", () => {
   const url = URL.createObjectURL(new Blob([body], { type: "text/plain;charset=utf-8" }));
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `sequence-alignment.${extension}`;
+  anchor.download = `KiwiGene_sequence-alignment.${extension}`;
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
@@ -517,8 +517,9 @@ $("download-button").addEventListener("click", () => {
 window.addEventListener('seqlab-reference', event => {
   const record = event.detail;
   if (!record || typeof record.sequence !== 'string' || !/^[ACGTRYSWKMBDHVN]+$/.test(record.sequence)) return;
-  setRecords([{name:record.name || '克隆模板', sequence:record.sequence, format:'参考基因组'}]);
+  setRecords([{name:record.name || '目标片段', sequence:record.sequence, format:'目标片段参照'}]);
   $('alignment-mode').value = 'fitting';
   $('alignment-mode').dispatchEvent(new Event('change'));
-  setStatus('克隆模板已设为参照。再上传测序公司返回的 AB1 / SEQ 文件即可比对。');
+  setStatus('目标片段已设为参照，再上传 AB1 / SEQ 文件即可比对。仅检查读段覆盖区域，未覆盖位置及载体连接处仍需验证。');
 });
+

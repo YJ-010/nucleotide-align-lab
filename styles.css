@@ -175,6 +175,29 @@ select{max-width:120px}
   .footer .shell{flex-direction:column}
 }
 
+/* KiwiGene identity and result clarity */
+.kiwi-brand-mark{flex:none;width:38px;height:38px;filter:drop-shadow(0 3px 5px #001b2020)}
+.brand .brand-name{letter-spacing:.02em;font-size:20px;line-height:1.25}
+.brand .brand-name small{display:block;margin:5px 0 0;font:9px/1.1 var(--mono);letter-spacing:.19em;color:#c1d7b8}
+.hero-shortcut{display:inline-flex;align-items:center;margin-top:17px;padding:11px 16px;border:1px solid #b9dda380;border-radius:9px;background:#e9f9d914;color:#e7f5db;font:600 12px/1.5 var(--sans);cursor:pointer;transition:background .15s}
+.hero-shortcut:hover{background:#d5efb92b}
+.vector-alternatives,.vector-sequence-preview{margin:18px 0;padding:16px 19px;border:1px solid #d8e3d7;border-radius:12px;background:#f8fbf5}
+.vector-alternatives>summary,.vector-sequence-preview>summary{cursor:pointer;font-size:13px;font-weight:700;color:#315f43}
+.vector-alternatives .vector-pair:last-child{margin-bottom:0}
+.vector-sequence-preview h3{margin:20px 0 8px;font-size:13px}
+.vector-sequence-preview pre{max-height:230px;overflow:auto;margin:0;padding:14px;background:white;border:1px solid #dce5d9;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.75 var(--mono)}
+#vector-reset-rules{margin-top:16px}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #81a95b;outline-offset:4px}
+@media(max-width:600px){
+ .brand .brand-name{font-size:16px}
+ .brand .brand-name small{font-size:8px}
+ .kiwi-brand-mark{width:32px;height:32px}
+ .hero-shortcut{font-size:11px;text-align:left;padding:9px 12px}
+}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto!important}*,*::before,*::after{animation:none!important;transition:none!important}
+}
+
 /* Vector construction workflow */
 .tab-step{display:inline-grid;place-items:center;width:27px;height:27px;margin-right:7px;border-radius:50%;background:#e1eddd;color:#3b704c;font-size:10px;font-weight:850;vertical-align:middle}
 .workspace-tab.active .tab-step{background:#235b3e;color:#fff}

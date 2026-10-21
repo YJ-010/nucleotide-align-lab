@@ -23,6 +23,15 @@ export function cloningTemplate(record,kind,length=2000,removeStop=false){
  if(removeStop){if(!/T(?:AA|AG|GA)$/.test(sequence))throw new Error('该 CDS 没有标准终止密码子，无法自动去除。');sequence=sequence.slice(0,-3);removedStop=true;}
  return {sequence,kind:'cds',removedStop};
 }
+// Transfer the original CDS; only the selected vector may remove its end codons.
+export function vectorInputFromRecord(record,kind='cds',length=2000){
+ if(!record)throw new Error('请先查询并选择一个模板。');
+ if(!['cds','promoter'].includes(kind))throw new Error('载体构建请先切换为 CDS 或启动子；含 UTR 的 mRNA 不应直接当作 CDS。');
+ const cds=record.cds||'';
+ const promoter=record.upstream?promoterSequence(record,length).sequence:'';
+ if(!(kind==='cds'?cds:promoter))throw new Error('当前记录缺少所选序列。');
+ return {name:`${record.version}|${record.id}`,kind,cds,promoter,sequence:kind==='cds'?cds:promoter};
+}
 export function withTranscript(record,info){
  if(!info||info.status!=='available')return {...record,mrna:'',mrnaInfo:info||{status:'unavailable',reason:'not_loaded'}};
  const {prefix,suffix,length,cdsLength,cdsStart,cdsEnd}=info;
@@ -115,3 +124,4 @@ export function bindingCheck(primer,sequence,reverse=false){
  }return best;
 }
 export function fastaText(rows,kind,length){return rows.map(r=>{const t=cloningTemplate(r,kind,length);return `>${r.version}|${r.id}|${r.transcript}|${kind}${kind==='promoter'&&t.start!==null?`|${r.chrom}:${t.start}-${t.end}(${r.strand})`:r.manual?'|user_provided':''}\n${t.sequence.match(/.{1,80}/g)?.join('\n')||''}`;}).join('\n');}
+

@@ -1,4 +1,4 @@
-import {reverseComplement,meltingTemp,complementarity,hairpinStem} from './clone-core.mjs?v=20261022-vector1';
+import {reverseComplement,meltingTemp,complementarity,hairpinStem} from './clone-core.mjs?v=20261021-kiwi2';
 
 const stopPattern=/T(?:AA|AG|GA)$/;
 const IUPAC=/^[ACGTRYSWKMBDHVN]+$/;
@@ -54,6 +54,9 @@ export function prepareConstruct({templateId,cds='',promoter='',overrides={}}){
  if(template.input==='cds'){
   const hasATG=source.startsWith('ATG'),hasStop=stopPattern.test(source);
   if(source.length%3)warnings.push('原始 CDS 长度 '+source.length+' bp 不是 3 的倍数，请先核对开放阅读框。');
+  const internalStops=[];
+  for(let i=0;i+3<source.length;i+=3)if(/^(TAA|TAG|TGA)$/.test(source.slice(i,i+3)))internalStops.push(i+1);
+  if(internalStops.length)warnings.push('按输入第 1 位为读框起点，CDS 内部发现 '+internalStops.length+' 个终止密码子（起始位置：'+internalStops.slice(0,8).join('、')+(internalStops.length>8?'…':'')+' bp），请先核对序列与阅读框。');
   if(removeATG){
    if(!hasATG)throw new Error('该载体规则要求去除起始密码子，但输入 CDS 不以 ATG 开头。请核对序列或在高级设置中更改。');
    insert=insert.slice(3);removedATG=true;
@@ -64,6 +67,7 @@ export function prepareConstruct({templateId,cds='',promoter='',overrides={}}){
   }else if(!hasStop)warnings.push('输入 CDS 末端没有标准终止密码子；当前模板会原样保留 3′端。');
   if(insert.length%3)warnings.push('处理后插入片段为 '+insert.length+' bp，不是 3 的倍数，融合表达前必须复核阅读框。');
  }
+ if(insert.length<60)throw new Error('按载体规则处理后仅有 '+insert.length+' bp；本工具要求插入片段至少 60 bp。');
  const ambiguous=(insert.match(/[^ACGT]/g)||[]).length;
  if(ambiguous)warnings.push('插入片段含 '+ambiguous+' 个不确定碱基；若位于两端会影响自动选引物。');
  const internalSites=[];
@@ -83,12 +87,18 @@ function primerMetric(sequence,tail,options){
  const fullSequence=tail+sequence;
  return {sequence,tail,fullSequence,length:sequence.length,totalLength:fullSequence.length,tm:meltingTemp(sequence,options),gc,homopolymer:longestRun(sequence),hairpin:hairpinStem(fullSequence),self:complementarity(fullSequence,fullSequence)};
 }
+function countSites(sequence,motif){
+ let count=0,index=0;
+ while((index=sequence.indexOf(motif,index))!==-1){count++;index++;}
+ return count;
+}
 function sideCandidates(insert,side,tail,options){
  const values=[];
  for(let length=options.minLen;length<=options.maxLen;length++){
   const sequence=side==='forward'?insert.slice(0,length):reverseComplement(insert.slice(-length));
   if(!/^[ACGT]+$/.test(sequence))continue;
   const metric=primerMetric(sequence,tail,options);
+  metric.exactSites=countSites(insert,sequence)+countSites(insert,reverseComplement(sequence));
   metric.score=Math.abs(metric.tm-options.target)*3+Math.abs(metric.gc-50)/8+Math.abs(metric.length-22)*.15+Math.max(0,metric.homopolymer-4)*4+Math.max(0,metric.hairpin-4)*4+Math.max(0,metric.self.end-3)*6;
   values.push(metric);
  }
@@ -102,6 +112,7 @@ function pairWarnings(pair,target){
   if(p.homopolymer>5)warnings.push(label+'退火区含 '+p.homopolymer+' 个连续相同碱基');
   if(p.hairpin>=6)warnings.push(label+'完整引物简化发夹茎为 '+p.hairpin+' bp');
   if(p.self.end>=5)warnings.push(label+'完整引物 3′自互补为 '+p.self.end+' bp');
+  if(p.exactSites>1)warnings.push(label+'退火区在输入片段双链中有 '+p.exactSites+' 处完全匹配，需复核特异性');
  }
  if(pair.tmDifference>3)warnings.push('两条引物 ΔTm 为 '+pair.tmDifference.toFixed(1)+' °C');
  if(pair.heterodimer.end>=5)warnings.push('两条完整引物 3′连续互补为 '+pair.heterodimer.end+' bp');
@@ -117,16 +128,17 @@ export function designVectorPrimers({templateId,geneName='目标基因',cds='',p
  const reverse=sideCandidates(prepared.insert,'reverse',prepared.reverseTail,settings);
  if(!forward.length||!reverse.length)throw new Error('目标片段的一端含不确定碱基，18–35 nt 范围内无法生成可靠退火区。请先核对序列两端。');
  const pairs=[];
- for(const f of forward.slice(0,7))for(const r of reverse.slice(0,7)){
+ for(const f of forward)for(const r of reverse){
   const tmDifference=Math.abs(f.tm-r.tm),heterodimer=complementarity(f.fullSequence,r.fullSequence);
   const pair={forward:f,reverse:r,tmDifference,heterodimer,productSize:prepared.insert.length,productWithTails:prepared.insert.length+prepared.forwardTail.length+prepared.reverseTail.length};
   pair.warnings=pairWarnings(pair,settings.target);
   pair.score=f.score+r.score+tmDifference*3+Math.max(0,heterodimer.end-3)*7+pair.warnings.length*2;
   pairs.push(pair);
  }
- pairs.sort((a,b)=>a.score-b.score||a.forward.length-b.forward.length||a.reverse.length-b.reverse.length);
+ // Passing pairs always precede flagged pairs; score only ranks within each group.
+ pairs.sort((a,b)=>Number(a.warnings.length>0)-Number(b.warnings.length>0)||a.score-b.score||a.forward.length-b.forward.length||a.reverse.length-b.reverse.length);
  const safeName=(geneName.trim()||'目标基因').replace(/[\s>|/\\]+/g,'_').slice(0,80);
  const amplicon=prepared.forwardTail+prepared.insert+reverseComplement(prepared.reverseTail);
- return {...prepared,geneName:safeName,settings,pairs:pairs.slice(0,3),amplicon};
+ return {...prepared,geneName:safeName,settings,evaluatedPairs:pairs.length,passingPairs:pairs.filter(p=>!p.warnings.length).length,pairs:pairs.slice(0,3),amplicon};
 }
 
