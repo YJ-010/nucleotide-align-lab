@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cloningContext,designCloningSchemes,cloningOrderTSV} from '../cloning-design.mjs';
-import {reverseComplement} from '../clone-core.mjs';
+import {reverseComplement,hasTandemRepeat} from '../clone-core.mjs';
 
 const cds='ATGACCGTACAGGATCTGCA'+'ACGT'.repeat(60)+'CC'+'TGCATCAGGTACCGATGCTATAA';
 let seed=47;function dna(n){let s='';for(let i=0;i<n;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;s+='ACGT'[seed>>>30];}return s;}
@@ -61,4 +61,11 @@ test('tails are included with correct orientation in products; TSV exports one p
  assert.ok(r.schemes.every(s=>s.pairs.length));
  for(const s of r.schemes)for(const p of s.pairs){assert.equal(p.productWithTailsSequence,'GAATTC'+p.productSequence+reverseComplement('AGATCT'));assert.equal(p.productWithTails,p.productSize+12);}
  const rows=cloningOrderTSV(r,record).trim().split('\n');assert.equal(rows.length,5);assert.match(rows[1],/PLANT_cds_exact_1_F/);assert.match(rows[3],/PLANT_cds_outer_1_F/);
+});
+test('simple di- and trinucleotide repeats are excluded from automatic primer candidates',()=>{
+ assert.ok(hasTandemRepeat('CTCTCTCTCTCTCTCCCCC'));assert.ok(hasTandemRepeat('ACGACGACGACG'));
+ assert.equal(hasTandemRepeat('ACCCCAAACCTCTGCAAA'),false);
+ const r=designCloningSchemes(record);
+ for(const s of r.schemes)for(const p of s.pairs){assert.equal(hasTandemRepeat(p.forward.sequence),false);assert.equal(hasTandemRepeat(p.reverse.sequence),false);}
+ const bad='ATG'+'CT'.repeat(30)+'TAA';assert.equal(designCloningSchemes({cds:bad}).schemes[0].pairs.length,0);
 });

@@ -9,7 +9,7 @@
   <meta property="og:title" content="猕猴桃基因工坊 | KiwiGene Lab">
   <meta property="og:description" content="从猕猴桃基因查询，到载体引物设计与测序比对，一站式浏览器工作台。">
   <link rel="icon" type="image/svg+xml" href="./assets/kiwi-mark.svg">
-  <link rel="stylesheet" href="./styles.css?v=20261026-boundary1">
+  <link rel="stylesheet" href="./styles.css?v=20261026-boundary2">
 </head>
 <body>
   <header class="site-header">
@@ -225,7 +225,7 @@
         <details class="primer-options"><summary>反应条件与 5′ 附加序列（可选）</summary><div class="clone-controls"><label>单价盐（mM）<input id="primer-salt" type="number" value="50" min="1" max="500"></label><label>Mg²⁺（mM）<input id="primer-mg" type="number" value="1.5" min="0" max="10" step="0.1"></label><label>总 dNTP（mM）<input id="primer-dntp" type="number" value="0.2" min="0" max="10" step="0.1"></label><label>总寡核苷酸浓度（nM）<input id="primer-conc" type="number" value="250" min="1" max="2000"></label></div><div class="tail-fields"><label>正向 5′ 附加序列<input id="forward-tail" autocomplete="off" spellcheck="false" placeholder="留空；或输入酶切位点／同源臂"></label><label>反向 5′ 附加序列<input id="reverse-tail" autocomplete="off" spellcheck="false" placeholder="按最终订购引物的 5′→3′ 方向输入"></label></div><p class="field-hint">Tm 只按退火区计算。这里不自动选择载体或酶切位点；附加序列的方向、读框和连接方式请按载体核对。</p></details>
         <div id="primer-status" class="status" role="status" aria-live="polite"></div><div id="primer-results"></div>
         <div id="primer-downloads" class="download-group" hidden><button id="primer-copy" class="small-action" type="button">复制引物与报告</button><button id="primer-download" class="small-action filled" type="button">下载引物报告 ↓</button><button id="primer-tsv" class="small-action" type="button">导出两方案各候选 1 TSV ↓</button><button id="primer-products" class="small-action" type="button">下载全部候选产物 FASTA ↓</button></div>
-        <p class="method-note">引物为计算初筛候选：最近邻法估算 Tm，并筛查连续互补、同聚物和简化发夹茎；未进行完整二级结构热力学分析或全基因组特异性验证。位点计数仅检查已载入的同一模板，不能证明基因组内唯一。订购前请用 Primer-BLAST / Primer3 等结合实际模板复核。</p>
+        <p class="method-note">引物为计算初筛候选：最近邻法估算 Tm，并筛查连续互补、同聚物、简单串联重复和简化发夹茎；未进行完整二级结构热力学分析或全基因组特异性验证。位点计数仅检查已载入的同一模板，不能证明基因组内唯一。订购前请用 Primer-BLAST / Primer3 等结合实际模板复核。</p>
       </section>
     </section>
     <section id="clone-help" class="shell clone-help panel"><div class="panel-heading"><div><span class="section-number">REFERENCE & METHOD</span><h2>版本与判断依据</h2></div></div><div class="help-grid"><article><h3>先看实验材料</h3><p>高一致率不代表可任意替换材料。页面默认选择您本次查询的基因与版本，您仍可切换；同一品种不同样本也可能存在变异。CDS、mRNA 与上游区分别比较，不合并成一个分数。</p></article><article><h3>启动子范围有明确边界</h3><p>这里提取注释 CDS 起点之前最多 2000 bp，排除 CDS，自动对负链反向互补。它可能包含 5′UTR、邻近基因或重复区，不等同于已验证的 TSS 启动子。查看时在上游区之后追加拼接 CDS 并标红，明确标注边界；两段拼接仅供对照，不代表连续基因组片段。</p></article><article><h3>mRNA 按注释提供</h3><p>mRNA 按外显子或 CDS＋UTR 注释拼接，去除内含子，使用 T 表示便于 cDNA 克隆。缺少转录本结构或 UTR 注释时明确提示，不自动补齐未注释的两端，也不宣称经验证的全长。</p></article></div><details><summary>查看参考库来源、规模与算法</summary><div id="reference-catalog"></div><p>序列比较：全局 Needleman–Wunsch，匹配 +2、不匹配 −1、缺口 −2；全长一致率 = 明确相同碱基 / 全部比对列。N 不计为匹配。近似覆盖 = 无缺口配对碱基 / 原序列长度。</p><p>Tm：SantaLucia 最近邻参数、熵盐校正及 Mg/dNTP 钠当量；对称序列使用对称校正。默认条件可在上方修改。连续互补初筛阈值：3′ 端互补 &lt;5 bp、发夹连续茎 &lt;6 bp、同聚物 ≤5、两条引物 ΔTm ≤3 °C、GC 25–75%。</p><p><a href="https://biopython.org/docs/latest/api/Bio.SeqUtils.MeltingTemp.html" target="_blank" rel="noopener">Tm 方法说明 ↗</a> · <a href="https://github.com/bbuchfink/diamond" target="_blank" rel="noopener">DIAMOND 同源候选搜索 ↗</a> · <a href="https://primer3.org/" target="_blank" rel="noopener">Primer3 复核 ↗</a></p></details></section>
@@ -324,7 +324,7 @@
   <footer class="footer"><div class="shell"><span class="footer-brand">猕猴桃基因工坊 <span>KiwiGene Lab</span></span><span>基因克隆 → 载体构建 → 测序验证<br><small>序列在浏览器本地计算；参考库查询需要联网。配图与结构图为示意。</small></span></div></footer>
   <script type="module" src="./workspace-nav.mjs?v=20261021-kiwi2"></script>
   <script type="module" src="./app.mjs?v=20261021-kiwi2"></script>
-  <script type="module" src="./clone-app.mjs?v=20261026-boundary1"></script>
+  <script type="module" src="./clone-app.mjs?v=20261026-boundary2"></script>
   <script type="module" src="./vector-app.mjs?v=20261021-kiwi2"></script>
 </body>
 </html>

@@ -89,6 +89,7 @@ export function complementarity(a,b){
 }
 export function hairpinStem(s){let best=0;for(let i=0;i<s.length;i++)for(let j=i+6;j<s.length;j++){let k=0;while(i+k<j-k-3&&s[i+k]===reverseComplement(s[j-k]))k++;best=Math.max(best,k);}return best;}
 function primerMetrics(seq,opts){const gc=100*[...seq].filter(c=>'GC'.includes(c)).length/seq.length;return {sequence:seq,length:seq.length,tm:meltingTemp(seq,opts),gc,homopolymer:Math.max(...(seq.match(/(.)\1*/g)||[]).map(x=>x.length)),hairpin:hairpinStem(seq),self:complementarity(seq,seq)};}
+export function hasTandemRepeat(seq){return /(..)\1{4}/.test(seq)||/(...)\1{3}/.test(seq);}
 export function designPrimers(sequence,options={}){
  const target=options.target??60,minLen=options.minLen??18,maxLen=options.maxLen??30;
  if(!Number.isFinite(target)||target<50||target>70)throw new Error('目标 Tm 请设为 50–70 °C。');
@@ -98,7 +99,7 @@ export function designPrimers(sequence,options={}){
  if(tails.some(x=>!/^[ACGT]{0,60}$/.test(x)))throw new Error('5′ 附加序列只能含 A/C/G/T，每端最多 60 nt。');
  const lists=[[],[]];
  for(let side=0;side<2;side++)for(let len=minLen;len<=maxLen;len++){
-  const seq=side===0?sequence.slice(0,len):reverseComplement(sequence.slice(-len));if(!/^[ACGT]+$/.test(seq))continue;
+  const seq=side===0?sequence.slice(0,len):reverseComplement(sequence.slice(-len));if(!/^[ACGT]+$/.test(seq)||(options.avoidTandem&&hasTandemRepeat(seq)))continue;
   const p=primerMetrics(seq,options),full=tails[side]+seq;
   p.fullSequence=full;p.tail=tails[side];p.hairpin=hairpinStem(full);p.self=complementarity(full,full);
   if(Math.abs(p.tm-target)>5||p.gc<25||p.gc>75||p.homopolymer>5||p.hairpin>=6||p.self.end>=5)continue;

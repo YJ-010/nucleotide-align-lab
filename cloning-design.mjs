@@ -1,4 +1,4 @@
-import {cloningTemplate,designPrimers,meltingTemp,complementarity,hairpinStem,reverseComplement} from './clone-core.mjs?v=20261026-boundary1';
+import {cloningTemplate,designPrimers,meltingTemp,complementarity,hairpinStem,reverseComplement,hasTandemRepeat} from './clone-core.mjs?v=20261026-boundary2';
 
 // Coordinates below are zero-based half-open on a 5′→3′ cDNA or genomic context.
 // A primer's reported start/end always describe its annealing site on that context.
@@ -47,7 +47,7 @@ function flankCandidates(context,side,options,window){
  const lo=side===0?Math.max(0,start-window):end,hi=side===0?start:Math.min(sequence.length,end+window),out=[];
  for(let p=lo;p<=hi-min;p++)for(let len=min;len<=max&&p+len<=hi;len++){
   const seq=side===0?sequence.slice(p,p+len):reverseComplement(sequence.slice(p,p+len));
-  if(!/^[ACGT]+$/.test(seq))continue;
+  if(!/^[ACGT]+$/.test(seq)||hasTandemRepeat(seq))continue;
   const tm=meltingTemp(seq,options);if(Math.abs(tm-target)>5)continue;
   const gc=100*(seq.match(/[GC]/g)||[]).length/len,homopolymer=Math.max(...seq.match(/(.)\1*/g).map(x=>x.length));
   if(gc<25||gc>75||homopolymer>5)continue;
@@ -62,7 +62,7 @@ export function designCloningSchemes(record,kind='cds',length=2000,options={},ov
  const context=cloningContext(record,kind,length,override),window=options.window??200;
  if(!Number.isInteger(window)||window<35||window>200)throw new Error('外侧搜索范围请填 35–200 bp（每侧）。');
  // This validates shared parameters even when no candidate can pass the filters.
- const fixed=designPrimers(context.target,options);
+ const fixed=designPrimers(context.target,{...options,avoidTandem:true});
  const primary={key:'exact',title:'首选方案 · 精确边界',pairs:fixed.pairs.map(p=>annotatePair({...p,forward:{...p.forward,start:context.start,end:context.start+p.forward.length},reverse:{...p.reverse,start:context.end-p.reverse.length,end:context.end}},context,'exact')),reason:fixed.reason};
  const backup={key:'outer',title:'备用方案 · 两侧外扩',pairs:[],reason:context.reason};
  const availableLeft=context.start,availableRight=context.sequence.length-context.end,min=options.minLen??18;

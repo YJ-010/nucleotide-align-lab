@@ -1,6 +1,6 @@
 import {parseSequences} from './align-core.mjs?v=20261021-kiwi2';
-import {VERSIONS,shardFor,cloningTemplate,compareDNA,fastaText,withTranscript,sequenceDisplay,vectorInputFromRecord} from './clone-core.mjs?v=20261026-boundary1';
-import {designCloningSchemes,cloningOrderTSV} from './cloning-design.mjs?v=20261026-boundary1';
+import {VERSIONS,shardFor,cloningTemplate,compareDNA,fastaText,withTranscript,sequenceDisplay,vectorInputFromRecord} from './clone-core.mjs?v=20261026-boundary2';
+import {designCloningSchemes,cloningOrderTSV} from './cloning-design.mjs?v=20261026-boundary2';
 const $=id=>document.getElementById(id), labels=Object.fromEntries(VERSIONS), DATA='./data/kiwi-20261019/';
 let revision=0,manifest=null,source=null,selected=new Map(),candidateLists=new Map(),comparisons=[],activePair=null,primerResult=null,primerReport='',worker=null,jobId=0;
 const jobs=new Map(),cache=new Map();
@@ -12,7 +12,7 @@ function invalidateComparison(){revision++;cancelJobs();comparisons=[];activePai
 function clearGenes(){invalidateComparison();$('primer-context').value='';source=null;selected=new Map();candidateLists=new Map();$('gene-results').hidden=true;$('gene-cards').replaceChildren();}
 async function jsonFetch(path,gzip=false){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),60000);
- try{const r=await fetch(DATA+path+(gzip?'':'?v=20261026-boundary1'),{signal:controller.signal});if(!r.ok)throw new Error(`参考数据读取失败（HTTP ${r.status}），请稍后重试。`);if(!gzip)return await r.json();
+ try{const r=await fetch(DATA+path+(gzip?'':'?v=20261026-boundary2'),{signal:controller.signal});if(!r.ok)throw new Error(`参考数据读取失败（HTTP ${r.status}），请稍后重试。`);if(!gzip)return await r.json();
  const b=new Uint8Array(await r.arrayBuffer());let decoded;
  if(b[0]===31&&b[1]===139){if(typeof DecompressionStream==='undefined')throw new Error('此浏览器不支持参考库解压，请使用近期版本的 Chrome、Edge、Firefox 或 Safari。');decoded=await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).text();}else decoded=new TextDecoder().decode(b);
  return JSON.parse(decoded);
@@ -121,7 +121,7 @@ $('promoter-length').addEventListener('input',()=>{invalidateComparison();update
 $('clone-template').addEventListener('change',()=>{revision++;cancelJobs();clearPrimer();$('primer-context').value='';updateTemplate();});
 function task(type,data){
  if(typeof Worker==='undefined')return new Promise((resolve,reject)=>setTimeout(()=>{try{resolve(type==='compare'?compareDNA(data.a,data.b):designCloningSchemes(data.record,data.kind,data.length,data.options,data.override));}catch(e){reject(e);}},0));
- if(!worker){worker=new Worker(new URL('./clone-worker.mjs?v=20261026-boundary1',import.meta.url),{type:'module'});worker.onmessage=({data})=>{const j=jobs.get(data.id);if(!j)return;clearTimeout(j.timer);jobs.delete(data.id);data.error?j.reject(new Error(data.error)):j.resolve(data.result);};worker.onerror=()=>{for(const j of jobs.values()){clearTimeout(j.timer);j.reject(new Error('后台计算无法启动，请刷新页面重试。'));}jobs.clear();worker.terminate();worker=null;};}
+ if(!worker){worker=new Worker(new URL('./clone-worker.mjs?v=20261026-boundary2',import.meta.url),{type:'module'});worker.onmessage=({data})=>{const j=jobs.get(data.id);if(!j)return;clearTimeout(j.timer);jobs.delete(data.id);data.error?j.reject(new Error(data.error)):j.resolve(data.result);};worker.onerror=()=>{for(const j of jobs.values()){clearTimeout(j.timer);j.reject(new Error('后台计算无法启动，请刷新页面重试。'));}jobs.clear();worker.terminate();worker=null;};}
  return new Promise((resolve,reject)=>{const id=++jobId;const timer=setTimeout(()=>{jobs.delete(id);reject(new Error('计算超时，请缩短片段或下载后离线处理。'));},120000);jobs.set(id,{resolve,reject,timer});worker.postMessage({id,type,...data});});
 }
 $('compare-genes').addEventListener('click',async()=>{
@@ -171,7 +171,7 @@ $('design-primers').addEventListener('click',async()=>{
 function primerPosition(p){return `${p.relativeStart}～${p.relativeEnd}`;}
 function renderPrimers(){
  const result=primerResult,t=result.template,box=$('primer-results');box.replaceChildren();
- const lines=['猕猴桃基因工坊 · 首选与备用克隆引物',`${labels[t.record.version]} | ${t.record.id} | ${t.record.transcript}`,`目标：${t.kind}；完整目标 ${result.targetLength} bp；全部引物按 5′→3′ 书写`,...result.notes,`外侧来源：${result.contextSource||'未取得'}`,`可用外侧：5′侧 ${result.availableLeft} bp；3′侧 ${result.availableRight} bp`, `参数：${JSON.stringify(result.parameters)}`,'坐标：目标首位为 1，前方用负数，不设 0；R 位置按目标正向坐标表示，R 序列已反向互补。','方法：最近邻 Tm、连续互补、同聚物与简化发夹初筛；不是 Primer3 输出。','未做全基因组特异性验证；订购前结合实际材料复核。',...(t.record.warnings||[]),''];
+ const lines=['猕猴桃基因工坊 · 首选与备用克隆引物',`${labels[t.record.version]} | ${t.record.id} | ${t.record.transcript}`,`目标：${t.kind}；完整目标 ${result.targetLength} bp；全部引物按 5′→3′ 书写`,...result.notes,`外侧来源：${result.contextSource||'未取得'}`,`可用外侧：5′侧 ${result.availableLeft} bp；3′侧 ${result.availableRight} bp`, `参数：${JSON.stringify(result.parameters)}`,'坐标：目标首位为 1，前方用负数，不设 0；R 位置按目标正向坐标表示，R 序列已反向互补。','方法：最近邻 Tm、连续互补、同聚物、简单串联重复与简化发夹初筛；不是 Primer3 输出。','未做全基因组特异性验证；订购前结合实际材料复核。',...(t.record.warnings||[]),''];
  box.append(el('p',`外侧序列：${result.contextSource||'未取得'}。可用 5′侧 ${result.availableLeft} bp，3′侧 ${result.availableRight} bp。`,'field-hint'));
  for(const note of result.notes)box.append(el('p',note,'field-hint'));
  for(const scheme of result.schemes){
