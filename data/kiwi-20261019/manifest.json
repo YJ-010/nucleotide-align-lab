@@ -107,5 +107,13 @@
         "noAnnotatedUTR": 4
       }
     }
+  },
+  "primerFlanks": {
+    "ready": false,
+    "path": "primer-flanks-v1",
+    "shards": 16,
+    "flankLimit": 200,
+    "built": "2026-10-26",
+    "source": "Same public reference FASTA checksums as versions[].sha256.genome; targets verified against all published upstream sequences."
   }
 }

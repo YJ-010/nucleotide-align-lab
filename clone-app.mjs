@@ -1,5 +1,6 @@
 import {parseSequences} from './align-core.mjs?v=20261021-kiwi2';
-import {VERSIONS,shardFor,cloningTemplate,compareDNA,designPrimers,bindingCheck,fastaText,withTranscript,sequenceDisplay,vectorInputFromRecord} from './clone-core.mjs?v=20261021-kiwi2';
+import {VERSIONS,shardFor,cloningTemplate,compareDNA,fastaText,withTranscript,sequenceDisplay,vectorInputFromRecord} from './clone-core.mjs?v=20261026-boundary1';
+import {designCloningSchemes,cloningOrderTSV} from './cloning-design.mjs?v=20261026-boundary1';
 const $=id=>document.getElementById(id), labels=Object.fromEntries(VERSIONS), DATA='./data/kiwi-20261019/';
 let revision=0,manifest=null,source=null,selected=new Map(),candidateLists=new Map(),comparisons=[],activePair=null,primerResult=null,primerReport='',worker=null,jobId=0;
 const jobs=new Map(),cache=new Map();
@@ -8,10 +9,10 @@ function say(id,text,error=false){const n=$(id);n.textContent=text;n.classList.t
 function cancelJobs(){if(worker){worker.terminate();worker=null;}for(const job of jobs.values()){clearTimeout(job.timer);job.reject(new Error('参数已更改，请重新计算。'));}jobs.clear();}
 function clearPrimer(){primerResult=null;primerReport='';$('primer-results').replaceChildren();$('primer-downloads').hidden=true;say('primer-status','');}
 function invalidateComparison(){revision++;cancelJobs();comparisons=[];activePair=null;$('comparison-matrix').replaceChildren();$('pair-detail').hidden=true;say('compare-status','参数已更新，点击比较当前候选。');clearPrimer();}
-function clearGenes(){invalidateComparison();source=null;selected=new Map();candidateLists=new Map();$('gene-results').hidden=true;$('gene-cards').replaceChildren();}
+function clearGenes(){invalidateComparison();$('primer-context').value='';source=null;selected=new Map();candidateLists=new Map();$('gene-results').hidden=true;$('gene-cards').replaceChildren();}
 async function jsonFetch(path,gzip=false){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),60000);
- try{const r=await fetch(DATA+path+(gzip?'':'?v=20261019-clone4'),{signal:controller.signal});if(!r.ok)throw new Error(`参考数据读取失败（HTTP ${r.status}），请稍后重试。`);if(!gzip)return await r.json();
+ try{const r=await fetch(DATA+path+(gzip?'':'?v=20261026-boundary1'),{signal:controller.signal});if(!r.ok)throw new Error(`参考数据读取失败（HTTP ${r.status}），请稍后重试。`);if(!gzip)return await r.json();
  const b=new Uint8Array(await r.arrayBuffer());let decoded;
  if(b[0]===31&&b[1]===139){if(typeof DecompressionStream==='undefined')throw new Error('此浏览器不支持参考库解压，请使用近期版本的 Chrome、Edge、Firefox 或 Safari。');decoded=await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).text();}else decoded=new TextDecoder().decode(b);
  return JSON.parse(decoded);
@@ -53,7 +54,7 @@ $('gene-form').addEventListener('submit',async e=>{
  $('gene-search').disabled=true;say('gene-status','正在查询参考编号与同源候选，首次需下载参考文件，请稍候…');
  try{await loadCatalog();if(manifest.ready===false)throw new Error('自动编号查询尚未开放；请先使用下方手动序列入口。');const version=$('gene-version').value==='auto'?guess(id):$('gene-version').value;const record=await loadGene(version,id);if(rev!==revision)return;source=record;const next=new Map([[version,record]]),lists=new Map();const missing=[];
  await Promise.all(VERSIONS.filter(([v])=>v!==version).map(async([v])=>{const hits=record.homologs?.[v]||[];lists.set(v,hits);if(!hits.length){missing.push(labels[v]);return;}try{const r=await loadGene(v,hits[0].id);next.set(v,{...r,evidence:hits[0]});}catch(error){missing.push(`${labels[v]}：${error.message}`);}}));
- if(rev!==revision)return;selected=next;candidateLists=lists;renderCards();renderTemplateOptions();$('gene-results').hidden=false;say('gene-status',`已读取 ${selected.size} 个版本的候选。${missing.length?'未取得候选：'+missing.join('；')+'。':''} 请核对编号与证据后比较。`);say('compare-status','选择 CDS、mRNA 或上游区，点击比较当前候选。');
+ if(rev!==revision)return;selected=next;candidateLists=lists;renderCards();renderTemplateOptions(version);$('gene-results').hidden=false;say('gene-status',`已读取 ${selected.size} 个版本的候选，克隆模板默认选中查询的 ${record.id}。${missing.length?'未取得候选：'+missing.join('；')+'。':''} 请核对编号与证据后比较。`);say('compare-status','选择 CDS、mRNA 或上游区，点击比较当前候选。');
  }catch(error){if(rev===revision)say('gene-status',error.message,true);}finally{$('gene-search').disabled=manifest?.ready===false;}
 });
 function option(value,text){const n=el('option',text);n.value=value;return n;}
@@ -67,28 +68,32 @@ function renderCards(){$('candidate-title').textContent=source.manual?'各版本
  if(r.isoforms?.length>1){const lab=el('label','转录本（同源搜索使用本基因最长 CDS 蛋白）'),select=el('select');select.setAttribute('aria-label',label+' 转录本');for(const tid of r.isoforms)select.append(option(tid,tid.split('|').at(-1).replace(/_mrna$/,'')+(tid===r.representative?' · 最长 CDS':'')));select.value=r.transcript;select.addEventListener('change',()=>chooseCandidate(v,select.value,r.evidence));lab.append(select);card.append(lab);}
  for(const w of r.warnings||[])card.append(el('p',w,'gene-warning'));box.append(card);
  }}
-async function chooseCandidate(v,id,evidence){invalidateComparison();const rev=revision;say('gene-status',`正在读取 ${id}…`);try{const r=await loadGene(v,id);if(rev!==revision)return;selected.set(v,{...r,evidence});renderCards();renderTemplateOptions();say('gene-status','候选已更新，请重新比较并设计引物。');}catch(e){if(rev===revision){say('gene-status',e.message,true);renderCards();}}}
+async function chooseCandidate(v,id,evidence){invalidateComparison();$('primer-context').value='';const rev=revision;say('gene-status',`正在读取 ${id}…`);try{const r=await loadGene(v,id);if(rev!==revision)return;selected.set(v,{...r,evidence});renderCards();renderTemplateOptions();say('gene-status','候选已更新，请重新比较并设计引物。');}catch(e){if(rev===revision){say('gene-status',e.message,true);renderCards();}}}
 function kind(){return $('clone-kind').value;}
 function upstreamLength(){return Number($('promoter-length').value);}
 function rows(){return VERSIONS.map(([v])=>selected.get(v)).filter(Boolean);}
 function usableRows(){return rows().filter(r=>kind()==='cds'?r.cds:kind()==='mrna'?r.mrna:r.upstream);}
-function currentTemplate(){const r=selected.get($('clone-template').value);if(!r)throw new Error('请先查询并选择一个模板。');return {record:r,...cloningTemplate(r,kind(),upstreamLength(),$('remove-stop').checked)};}
-function renderTemplateOptions(){const old=$('clone-template').value,box=$('clone-template'),list=usableRows();box.replaceChildren();for(const r of list)box.append(option(r.version,`${labels[r.version]} · ${r.id} · ${r.transcriptLabel||r.transcript}`));box.value=list.some(r=>r.version===old)?old:list.some(r=>r.version==='white')?'white':list[0]?.version||'';updateTemplate();}
+function currentTemplate(){const r=selected.get($('clone-template').value);if(!r)throw new Error('请先查询并选择一个模板。');return {record:r,...cloningTemplate(r,kind(),upstreamLength(),false)};}
+function renderTemplateOptions(preferred){const old=preferred||$('clone-template').value,box=$('clone-template'),list=usableRows();box.replaceChildren();for(const r of list)box.append(option(r.version,`${labels[r.version]} · ${r.id} · ${r.transcriptLabel||r.transcript}`));box.value=list.some(r=>r.version===old)?old:list.some(r=>r.version===source?.version)?source.version:list[0]?.version||'';updateTemplate();}
 function updateTemplate(){
  try{
   const t=currentTemplate(),r=t.record;
   const material=kind()==='promoter'?'请使用基因组 DNA 克隆上游区':kind()==='mrna'?'mRNA 对应 cDNA 克隆模板':'请使用 cDNA 克隆 CDS';
   $('template-summary').textContent=`${labels[r.version]} / ${r.id} · ${t.sequence.length.toLocaleString()} bp · ${material}`+(t.removedStop?' · 已去除末端终止密码子':'')+(t.truncated?` · 边界限制：请求 ${t.requested} bp，实际仅 ${t.sequence.length} bp`:'')+(kind()==='promoter'?(t.start===null?' · 用户提供上游区，坐标未核对':` · ${r.chrom}:${t.start}–${t.end} (${r.strand})`):'')+(r.warnings?.length?' · 注意：'+r.warnings.join('；'):'')+(kind()==='mrna'?' · '+transcriptNotes(r).join('；'):'')+(r.evidence&&!r.evidence.reciprocal?' · 当前为单向蛋白相似候选，请结合基因结构或共线性确认克隆对象。':'');
+  $('primer-target').textContent=`当前设计对象：${labels[r.version]} · ${r.id} · ${r.transcriptLabel||r.transcript} · ${t.kind==='promoter'?'启动子候选区':t.kind.toUpperCase()} ${t.sequence.length.toLocaleString()} bp`;
+  $('primer-exact-rule').textContent=t.kind==='cds'?'F 从 ATG 开始；R 覆盖末端终止密码子，产物是完整 CDS。':t.kind==='promoter'?`F 从上游目标第 1 位开始；R 覆盖第 ${t.sequence.length} 位，产物为完整 ${upstreamLength()} bp。`:'F、R 分别覆盖当前 mRNA / cDNA 的首尾。';
+  $('primer-outer-rule').textContent=t.kind==='cds'?'F 完全位于 ATG 前的 5′UTR；R 完全位于终止密码子后的 3′UTR，完整 CDS 均保留。':t.kind==='promoter'?`在 ${upstreamLength()} bp 目标两端之外寻找引物，产物包含完整目标及外扩序列；使用连续基因组 DNA。`:'切换为 CDS 可按已注释的 UTR 设计两侧备用引物。';
+  $('primer-context-help').textContent=t.kind==='cds'?'仅在 UTR 缺失或希望使用实测序列时填写：同一转录本的 cDNA，包含完整 CDS 和两侧 UTR。不要粘贴含内含子的基因组序列。':'仅在自动数据不足时填写：同一基因的连续基因组片段，包含完整上游目标及两侧序列。不要拼接剪接后的 CDS。';
   renderSequence(t);$('design-primers').disabled=false;
- }catch(e){$('template-summary').textContent=kind()==='mrna'?'当前候选没有可用的 mRNA。可切换候选，或在手动输入区提供已核对的转录本序列。':e.message;$('template-sequence').replaceChildren();$('sequence-legend').replaceChildren();$('sequence-view-note').textContent='';$('design-primers').disabled=true;}
+ }catch(e){$('template-summary').textContent=kind()==='mrna'?'当前候选没有可用的 mRNA。可切换候选，或在手动输入区提供已核对的转录本序列。':e.message;$('primer-target').textContent='当前没有可用模板，请核对所选序列。';$('template-sequence').replaceChildren();$('sequence-legend').replaceChildren();$('sequence-view-note').textContent='';$('design-primers').disabled=true;}
 }
 function templateFasta(t){return `>${t.record.version}|${t.record.id}|${t.record.transcript}|${t.kind}|${t.sequence.length}bp${t.kind==='promoter'&&t.start!==null?`|${t.record.chrom}:${t.start}-${t.end}(${t.record.strand})|upstream_only`:t.record.manual?'|user_provided':''}${t.kind==='mrna'?`|spliced_cDNA|CDS=${t.cdsStart??'unknown'}..${t.cdsEnd??'unknown'}`:''}${t.removedStop?'|stop_removed':''}\n${t.sequence.match(/.{1,80}/g)?.join('\n')||''}`;}
 function renderSequence(t){
- const r=t.record,view=sequenceDisplay(r,t.kind,upstreamLength(),$('remove-stop').checked),pre=$('template-sequence'),legend=$('sequence-legend');pre.replaceChildren();legend.replaceChildren();
+ const r=t.record,view=sequenceDisplay(r,t.kind,upstreamLength(),false),pre=$('template-sequence'),legend=$('sequence-legend');pre.replaceChildren();legend.replaceChildren();
  let header=templateFasta(t).split('\n')[0],note='';
  if(t.kind==='promoter'){
   header=`>${r.version}|${r.id}|${r.transcript}|UPSTREAM_PLUS_SPLICED_CDS_VIEW|upstream=1..${view.upstreamLength}|CDS=${view.cdsStart??'absent'}..${view.cdsEnd??'absent'}|not_genomic_contig`;
-  note=`显示上游 ${view.upstreamLength.toLocaleString()} bp`+(r.cds?`＋拼接 CDS ${r.cds.length.toLocaleString()} bp（红色）。两段拼接供对照，不代表连续基因组片段。`:'；此记录未提供 CDS。')+`当前比较、引物和模板 FASTA 仅使用上游 ${t.sequence.length.toLocaleString()} bp。`;
+  note=`显示上游 ${view.upstreamLength.toLocaleString()} bp`+(r.cds?`＋拼接 CDS ${r.cds.length.toLocaleString()} bp（红色）。两段拼接供对照，不代表连续基因组片段。`:'；此记录未提供 CDS。')+`比较与模板 FASTA 仅使用上游 ${t.sequence.length.toLocaleString()} bp；备用引物另从连续基因组两侧取序列。`;
   legend.append(el('span',`上游区：1–${view.upstreamLength} bp`));
  }else if(t.kind==='mrna'){
   note='按基因转录方向显示剪接 mRNA / cDNA，使用 T；不含内含子。不自动添加未注释的 UTR 或 poly(A) 尾。';
@@ -107,17 +112,16 @@ function renderSequence(t){
  }
 }
 $('clone-kind').addEventListener('change',()=>{
- invalidateComparison();const promoter=kind()==='promoter',mrna=kind()==='mrna';$('promoter-setting').hidden=!promoter;document.querySelector('.stop-setting').hidden=kind()!=='cds';if(kind()!=='cds')$('remove-stop').checked=false;
+ invalidateComparison();$('primer-context').value='';const promoter=kind()==='promoter',mrna=kind()==='mrna';$('promoter-setting').hidden=!promoter;
  $('sequence-definition').textContent=promoter?'比较注释 CDS 起点之前的上游区，长度上限 2000 bp。下方查看区追加红色 CDS 作为边界对照，不计入启动子相似率或引物产物。':mrna?'mRNA 按外显子或 CDS＋UTR 注释拼接，含已注释的非编码区，去除内含子；采用 T 表示 cDNA。只有可核对的转录本参加比较，缺少 UTR 不代表两端完整。':'CDS 从同版本基因组按注释拼接，并统一到转录方向。全长一致率将缺口和不确定碱基计入分母。';
  if(source?.manual)$('sequence-definition').textContent=promoter?'使用您提供的上游区，按 5′→3′ 比较；缩短时保留末端目标长度。查看区追加您提供的红色 CDS，不改变上游比较/引物范围。':mrna?'使用您提供的 mRNA / cDNA，按输入的 5′→3′ 方向比较。未自动核对 UTR、转录本结构或同源关系。':'使用您提供的 CDS，未自动验证版本、注释或同源关系。';
  renderTemplateOptions();if(promoter||mrna)$('template-detail').open=true;
 });
 $('promoter-length').addEventListener('input',()=>{invalidateComparison();updateTemplate();});
-$('clone-template').addEventListener('change',()=>{revision++;cancelJobs();clearPrimer();updateTemplate();});
-$('remove-stop').addEventListener('change',()=>{revision++;cancelJobs();clearPrimer();updateTemplate();});
+$('clone-template').addEventListener('change',()=>{revision++;cancelJobs();clearPrimer();$('primer-context').value='';updateTemplate();});
 function task(type,data){
- if(typeof Worker==='undefined')return new Promise((resolve,reject)=>setTimeout(()=>{try{if(type==='compare')resolve(compareDNA(data.a,data.b));else{const r=designPrimers(data.sequence,data.options);for(const p of r.pairs)p.binding=data.references.map(x=>({name:x.name,forward:bindingCheck(p.forward.sequence,x.sequence),reverse:bindingCheck(p.reverse.sequence,x.sequence,true)}));resolve(r);}}catch(e){reject(e);}},0));
- if(!worker){worker=new Worker(new URL('./clone-worker.mjs?v=20261019-clone4',import.meta.url),{type:'module'});worker.onmessage=({data})=>{const j=jobs.get(data.id);if(!j)return;clearTimeout(j.timer);jobs.delete(data.id);data.error?j.reject(new Error(data.error)):j.resolve(data.result);};worker.onerror=()=>{for(const j of jobs.values()){clearTimeout(j.timer);j.reject(new Error('后台计算无法启动，请刷新页面重试。'));}jobs.clear();worker.terminate();worker=null;};}
+ if(typeof Worker==='undefined')return new Promise((resolve,reject)=>setTimeout(()=>{try{resolve(type==='compare'?compareDNA(data.a,data.b):designCloningSchemes(data.record,data.kind,data.length,data.options,data.override));}catch(e){reject(e);}},0));
+ if(!worker){worker=new Worker(new URL('./clone-worker.mjs?v=20261026-boundary1',import.meta.url),{type:'module'});worker.onmessage=({data})=>{const j=jobs.get(data.id);if(!j)return;clearTimeout(j.timer);jobs.delete(data.id);data.error?j.reject(new Error(data.error)):j.resolve(data.result);};worker.onerror=()=>{for(const j of jobs.values()){clearTimeout(j.timer);j.reject(new Error('后台计算无法启动，请刷新页面重试。'));}jobs.clear();worker.terminate();worker=null;};}
  return new Promise((resolve,reject)=>{const id=++jobId;const timer=setTimeout(()=>{jobs.delete(id);reject(new Error('计算超时，请缩短片段或下载后离线处理。'));},120000);jobs.set(id,{resolve,reject,timer});worker.postMessage({id,type,...data});});
 }
 $('compare-genes').addEventListener('click',async()=>{
@@ -142,24 +146,70 @@ checkedAction('annotated-download',()=>{
 checkedAction('pair-download',()=>{if(!activePair)throw new Error('请先选择一组比较。');const p=activePair;save(`KiwiGene_${p.a.id}_${p.b.id}_aligned.fasta`,`>${p.a.version}|${p.a.id}\n${p.result.alignedA}\n>${p.b.version}|${p.b.id}\n${p.result.alignedB}\n`);});
 checkedAction('send-to-vector',()=>{const record=selected.get($('clone-template').value);window.dispatchEvent(new CustomEvent('seqlab-vector-input',{detail:vectorInputFromRecord(record,kind(),upstreamLength())}));});
 checkedAction('send-to-alignment',()=>{const t=currentTemplate();window.dispatchEvent(new CustomEvent('seqlab-reference',{detail:{name:`${t.record.version}|${t.record.id}|${t.kind}`,sequence:t.sequence}}));window.dispatchEvent(new CustomEvent('seqlab-show-workspace',{detail:{workspace:'sequence'}}));$('sequence-input').scrollIntoView({behavior:'smooth',block:'center'});});
-for(const id of ['primer-tm','primer-min','primer-max','primer-salt','primer-mg','primer-dntp','primer-conc','forward-tail','reverse-tail'])$(id).addEventListener('input',()=>{revision++;cancelJobs();clearPrimer();});
+for(const id of ['primer-tm','primer-min','primer-max','primer-salt','primer-mg','primer-dntp','primer-conc','forward-tail','reverse-tail','primer-window','primer-context'])$(id).addEventListener('input',()=>{revision++;cancelJobs();clearPrimer();});
+async function recordWithFlanks(t){
+ if(t.kind!=='promoter'||t.record.manual||$('primer-context').value.trim())return t.record;
+ if(!manifest?.primerFlanks?.ready)return {...t.record,flankError:'当前参考库尚未提供启动子目标外侧序列。首选可自动生成；备用方案请展开“备用引物范围与补充序列”，粘贴含完整目标及两侧序列的连续基因组片段。'};
+ try{
+  const r=t.record,path='primer-flanks-v1/'+r.version+'/'+(parseInt(shardFor(r.transcript),16)%16).toString(16).padStart(2,'0')+'.json.gz',data=await cached(path);
+  if(!data[r.transcript])throw new Error('此转录本的外侧序列未收录。');
+  return {...r,promoterFlanks:data[r.transcript]};
+ }catch(e){return {...t.record,flankError:'启动子外侧数据暂不可用：'+e.message+' 首选仍可计算；也可补充连续基因组两侧序列。'};}
+}
 $('design-primers').addEventListener('click',async()=>{
- clearPrimer();const rev=revision;$('design-primers').disabled=true;say('primer-status','正在筛选覆盖目标片段两端的引物，并检查当前候选序列中的匹配…');
- try{const t=currentTemplate(),options={target:Number($('primer-tm').value),minLen:Number($('primer-min').value),maxLen:Number($('primer-max').value),salt:Number($('primer-salt').value),mg:Number($('primer-mg').value),dntp:Number($('primer-dntp').value),concentration:Number($('primer-conc').value),forwardTail:$('forward-tail').value,reverseTail:$('reverse-tail').value};
- const references=usableRows().map(r=>({name:`${labels[r.version]} · ${r.id}`,sequence:cloningTemplate(r,kind(),upstreamLength()).sequence}));const result=await task('design',{sequence:t.sequence,options,references});if(rev!==revision)return;primerResult={...result,template:t};renderPrimers();if(!result.pairs.length)return say('primer-status',result.reason,true);say('primer-status',`已生成 ${result.pairs.length} 组初筛候选。尚未进行全基因组特异性验证。${result.templateAmbiguous?' 模板含 '+result.templateAmbiguous+' 个不确定碱基，需核对实测序列。':''}`);
+ clearPrimer();const rev=revision;$('design-primers').disabled=true;say('primer-status','正在核对当前基因边界，并筛选首选与备用引物…');
+ try{
+  const t=currentTemplate(),options={target:Number($('primer-tm').value),minLen:Number($('primer-min').value),maxLen:Number($('primer-max').value),salt:Number($('primer-salt').value),mg:Number($('primer-mg').value),dntp:Number($('primer-dntp').value),concentration:Number($('primer-conc').value),window:Number($('primer-window').value),forwardTail:$('forward-tail').value,reverseTail:$('reverse-tail').value};
+  let override='';if($('primer-context').value.trim()){const parsed=parseSequences($('primer-context').value);if(parsed.length!==1)throw new Error('补充两侧序列每次只接收一条 FASTA 或纯 DNA。');override=parsed[0].sequence;}
+  const record=await recordWithFlanks(t);if(rev!==revision)return;
+  const result=await task('design',{record,kind:t.kind,length:upstreamLength(),options,override});if(rev!==revision)return;
+  primerResult={...result,template:t};renderPrimers();
+  const count=result.schemes.reduce((n,s)=>n+s.pairs.length,0),ready=result.schemes.filter(s=>s.pairs.length).map(s=>s.key==='exact'?'首选':'备用');
+  say('primer-status',count?`${ready.join('、')}方案已生成，共 ${count} 组候选；每个方案按评分排序。${result.templateAmbiguous?' 目标含 '+result.templateAmbiguous+' 个不确定碱基。':''}`:'两种方案均未生成合格候选，请查看下方原因。',!count);
  }catch(e){if(rev===revision)say('primer-status',e.message,true);}finally{$('design-primers').disabled=false;}
 });
-function bindingText(x){if(!x)return '未找到可比较区间';return `${x.start}–${x.end}，错配 ${x.mismatches}，3′末 5 nt 错配 ${x.endMismatches}${x.matches>1?'，'+x.matches+' 处同分位置':''}`;}
-function renderPrimers(){const result=primerResult,t=result.template,box=$('primer-results');box.replaceChildren();const lines=['猕猴桃基因工坊 · 克隆引物初筛报告',`${labels[t.record.version]} | ${t.record.id} | ${t.record.transcript}`,`对象：${t.kind}；长度：${t.sequence.length} bp；方向：5′→3′`,kind()==='promoter'?(t.start===null?'用户提供上游区，未核对基因组坐标。':`坐标：${t.record.chrom}:${t.start}-${t.end} (${t.record.strand})；注释 CDS 上游，不是已验证 TSS 启动子。`):`${t.kind==='mrna'?'mRNA':'CDS'} 模板：cDNA；`+(t.removedStop?'已去终止密码子。':'保留原始末端。'),`参数：${JSON.stringify(result.parameters)}`,'方法：最近邻 Tm；连续互补 / 简化发夹初筛。不是 Primer3 输出。','未进行完整二级结构热力学或全基因组特异性验证；以下匹配仅在选中的候选序列中搜索。',...(t.record.warnings||[]).map(w=>'模板警示：'+w),...(t.kind==='mrna'?transcriptNotes(t.record):[]).map(w=>'mRNA 提示：'+w),''];
- result.pairs.forEach((p,i)=>{const card=el('article',undefined,'primer-pair');card.append(el('h3',`候选 ${i+1} · 目标片段 ${p.productSize} bp${p.productWithTails!==p.productSize?' · 含附加序列 '+p.productWithTails+' bp':''}`));lines.push(`候选 ${i+1} | 目标 ${p.productSize} bp | 含附加序列 ${p.productWithTails} bp`);
- for(const [dir,pr] of [['F 正向',p.forward],['R 反向',p.reverse]]){const row=el('div',undefined,'primer-row'),detail=el('div');detail.append(el('code',pr.fullSequence));const stats=`退火区 ${pr.length} nt · Tm ${pr.tm.toFixed(2)} °C · GC ${pr.gc.toFixed(1)}% · 3′自互补 ${pr.self.end} bp · 连续发夹茎 ${pr.hairpin} bp`;detail.append(el('small',stats));if(pr.tail)detail.append(el('small',`5′附加：${pr.tail}；退火区：${pr.sequence}`));row.append(el('span',dir+" 5′→3′"),detail);card.append(row);lines.push(dir+': '+pr.fullSequence,stats,'退火区：'+pr.sequence);}
- card.append(el('p',`ΔTm ${p.tmDifference.toFixed(2)} °C · 两引物 3′ 连续互补最长 ${p.heterodimer.end} bp · 简化结构筛查通过`,'field-hint'));
- const bindings=el('div',undefined,'binding-report');bindings.append(el('strong','在当前候选序列中匹配（仅初筛）'));for(const b of p.binding){const text=`${b.name}：F ${bindingText(b.forward)}；R ${bindingText(b.reverse)}`;bindings.append(el('p',text));lines.push(text);}card.append(bindings);box.append(card);lines.push('');});
- lines.push('模板 FASTA：',templateFasta(t));primerReport=lines.join('\n');$('primer-downloads').hidden=!result.pairs.length;
+function primerPosition(p){return `${p.relativeStart}～${p.relativeEnd}`;}
+function renderPrimers(){
+ const result=primerResult,t=result.template,box=$('primer-results');box.replaceChildren();
+ const lines=['猕猴桃基因工坊 · 首选与备用克隆引物',`${labels[t.record.version]} | ${t.record.id} | ${t.record.transcript}`,`目标：${t.kind}；完整目标 ${result.targetLength} bp；全部引物按 5′→3′ 书写`,...result.notes,`外侧来源：${result.contextSource||'未取得'}`,`可用外侧：5′侧 ${result.availableLeft} bp；3′侧 ${result.availableRight} bp`, `参数：${JSON.stringify(result.parameters)}`,'坐标：目标首位为 1，前方用负数，不设 0；R 位置按目标正向坐标表示，R 序列已反向互补。','方法：最近邻 Tm、连续互补、同聚物与简化发夹初筛；不是 Primer3 输出。','未做全基因组特异性验证；订购前结合实际材料复核。',...(t.record.warnings||[]),''];
+ box.append(el('p',`外侧序列：${result.contextSource||'未取得'}。可用 5′侧 ${result.availableLeft} bp，3′侧 ${result.availableRight} bp。`,'field-hint'));
+ for(const note of result.notes)box.append(el('p',note,'field-hint'));
+ for(const scheme of result.schemes){
+  const section=el('section',undefined,'cloning-scheme '+scheme.key),head=el('div',undefined,'section-bar');
+  head.append(el('h3',scheme.title),el('span',scheme.pairs.length?`${scheme.pairs.length} 组候选`:'暂未生成','result-state'));
+  section.append(head);lines.push(scheme.title);
+  if(!scheme.pairs.length){section.append(el('p',scheme.reason,'gene-warning'));lines.push(scheme.reason,'');box.append(section);continue;}
+  scheme.pairs.forEach((p,i)=>{
+   const card=el('article',undefined,'primer-pair');
+   const title=`候选 ${i+1} · ${p.productSize} bp`+(p.productWithTails!==p.productSize?` · 含 5′附加序列 ${p.productWithTails} bp`:'');
+   card.append(el('h4',title));
+   const boundary=scheme.key==='exact'?`精确保留目标 1～${result.targetLength}，无外扩。`:`完整目标 ${result.targetLength} bp ＋ 5′侧 ${p.leftExtension} bp ＋ 3′侧 ${p.rightExtension} bp。`;
+   card.append(el('p',boundary,'field-hint'));lines.push(title,boundary);
+   for(const [dir,pr] of [['F 正向',p.forward],['R 反向',p.reverse]]){
+    const row=el('div',undefined,'primer-row'),detail=el('div');detail.append(el('code',pr.fullSequence));
+    const stats=`退火区 ${pr.length} nt · Tm ${pr.tm.toFixed(2)} °C · GC ${pr.gc.toFixed(1)}% · 目标相对位置 ${primerPosition(pr)}`;
+    detail.append(el('small',stats));if(pr.tail)detail.append(el('small',`5′附加：${pr.tail}；退火区：${pr.sequence}`));
+    row.append(el('span',dir+' 5′→3′'),detail);card.append(row);lines.push(dir+': '+pr.fullSequence,stats,'退火区：'+pr.sequence);
+   }
+   card.append(el('p',`ΔTm ${p.tmDifference.toFixed(2)} °C · 3′互补最长 ${p.heterodimer.end} bp · 已载入同一模板内精确位点 F ${p.forward.exactSites} / R ${p.reverse.exactSites}（不代表全基因组唯一）`,'field-hint'));
+   if(p.forward.exactSites>1||p.reverse.exactSites>1)card.append(el('p','当前模板内存在重复退火位点，请优先复核特异性。','gene-warning'));
+   const actions=el('div',undefined,'download-group'),send=el('button','用此产物做测序参照 →','small-action');send.type='button';
+   send.addEventListener('click',()=>{window.dispatchEvent(new CustomEvent('seqlab-reference',{detail:{name:`${t.record.id}_${t.kind}_${scheme.key}_${i+1}`,sequence:p.productWithTailsSequence}}));window.dispatchEvent(new CustomEvent('seqlab-show-workspace',{detail:{workspace:'sequence'}}));});
+   actions.append(send);card.append(actions);section.append(card);lines.push(`产物 FASTA（含已输入的 5′附加序列）：\n>${t.record.id}_${t.kind}_${scheme.key}_${i+1}\n${p.productWithTailsSequence.match(/.{1,80}/g).join('\n')}`,'');
+  });
+  box.append(section);
+ }
+ lines.push('原始完整目标 FASTA：',templateFasta(t));primerReport=lines.join('\n');
+ $('primer-downloads').hidden=!result.schemes.some(s=>s.pairs.length);
 }
-$('primer-copy').addEventListener('click',async()=>{try{if(!primerReport)return;await navigator.clipboard.writeText(primerReport);say('primer-status','引物及报告已复制。');}catch{say('primer-status','浏览器未允许复制，请点击下载引物报告。',true);}});
+$('primer-copy').addEventListener('click',async()=>{try{if(!primerReport)return;await navigator.clipboard.writeText(primerReport);say('primer-status','首选、备用引物及报告已复制。');}catch{say('primer-status','浏览器未允许复制，请点击下载引物报告。',true);}});
 $('primer-download').addEventListener('click',()=>{if(primerReport)save('KiwiGene_'+primerResult.template.record.id+'_primers.txt',primerReport);});
-$('primer-tsv').addEventListener('click',()=>{if(!primerResult?.pairs.length)return;const rows=[['名称','序列_5to3','退火区','Tm_C','GC_percent','目标产物_bp','参考版本','基因编号','验证状态']];primerResult.pairs.forEach((p,i)=>{for(const [d,x] of [['F',p.forward],['R',p.reverse]])rows.push([`${primerResult.template.record.id}_${i+1}_${d}`,x.fullSequence,x.sequence,x.tm.toFixed(2),x.gc.toFixed(1),p.productSize,primerResult.template.record.version,primerResult.template.record.id,'未做全基因组特异性验证']);});save('KiwiGene_primer_order.tsv','\uFEFF'+rows.map(r=>r.join('\t')).join('\n'),'text/tab-separated-values;charset=utf-8');});
+$('primer-tsv').addEventListener('click',()=>{if(primerResult)save('KiwiGene_'+primerResult.template.record.id+'_primer_order.tsv',cloningOrderTSV(primerResult,primerResult.template.record),'text/tab-separated-values;charset=utf-8');});
+$('primer-products').addEventListener('click',()=>{
+ if(!primerResult)return;const r=primerResult,t=r.template,entries=[];
+ for(const s of r.schemes)for(const [i,p] of s.pairs.entries())entries.push('>'+t.record.id+'_'+t.kind+'_'+s.key+'_'+(i+1)+'|with_tails|'+p.productWithTails+'bp\n'+p.productWithTailsSequence.match(/.{1,80}/g).join('\n'));
+ save('KiwiGene_'+t.record.id+'_cloning_products.fasta',entries.join('\n')+'\n');
+});
 
 let simulatedInput=false;
 for(const [v,name] of VERSIONS){
